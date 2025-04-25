@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import get_user_model
-from .forms import RegistrationForm, LoginForm
+from django.contrib.auth import update_session_auth_hash
+from django.contrib.auth import authenticate, login as auth_login
+from django.contrib.auth.decorators import login_required
+from .forms import RegistrationForm, LoginForm, ProfileForm, CustomPasswordChangeForm
 from .utils import send_verification_email
 
 # Create your views here.
@@ -19,15 +21,41 @@ def register(request):
 
 def login(request):
     if request.method == 'POST':
-        form = LoginForm(request, data=request.POST)
+        form = LoginForm(request.POST)
         if form.is_valid():
-            user = form.get_user()
-            if user.is_verified:
-                # Log the user in
-                login(request, user)
-                return redirect('home')  # Redirect to a home page or dashboard
+            email = form.cleaned_data['email']
+            password = form.cleaned_data['password']
+            user = authenticate(request, email=email, password=password)
+            if user:
+                auth_login(request, user)
+                return redirect('home')
             else:
-                form.add_error(None, "Please verify your email before logging in.")
+                form.add_error(None, "无效的邮箱或密码")
     else:
         form = LoginForm()
     return render(request, 'login.html', {'form': form})
+
+
+@login_required
+def profile(request):
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('profile')
+    else:
+        form = ProfileForm(instance=request.user)
+    return render(request, 'profile.html', {'form': form})
+
+# 密码修改视图
+@login_required
+def change_password(request):
+    if request.method == 'POST':
+        form = CustomPasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            update_session_auth_hash(request, user)
+            auth_login(request, user)
+    else:
+        form = CustomPasswordChangeForm(request.user)
+    return render(request, 'change_password.html', {'form': form})
