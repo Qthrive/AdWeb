@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class AdauditConfig(AppConfig):
+class AdReviewConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'AdAudit'
+    name = 'ad_review'
