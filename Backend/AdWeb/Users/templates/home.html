@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>主页</title>
+    {% load static %} <!-- 加载 static 标签库 -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <header>
+        <h1>欢迎来到主页</h1>
+        <nav>
+            <ul>
+                <li><a href="{% url 'users:profile' %}">个人资料</a></li>
+                <li><a href="{% url 'users:change_password' %}">修改密码</a></li>
+                <li><a href="{% url 'users:logout' %}">退出登录</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        {% if user.is_authenticated %}
+            <p>您好，{{ user.email }}！欢迎回来。</p>
+        {% else %}
+            <p>您好，游客！请先 <a href="{% url 'users:login' %}?next={{ request.path }}">登录</a>。</p>
+        {% endif %}
+    </main>
+    <footer>
+        <p>&copy; 2025 软件工程课程设计</p>
+    </footer>
+</body>
+</html>

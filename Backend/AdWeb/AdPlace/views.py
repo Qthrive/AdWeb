@@ -14,9 +14,9 @@ def create_ad(request):
             return redirect('ad_list')
     else:
         form = AdForm()
-    return render(request, 'ads/create.html', {'form': form})
+    return render(request, 'create.html', {'form': form})
 
 @login_required
 def ad_list(request):
     ads = AdService.get_ad_list(user=request.user)
-    return render(request, 'ads/list.html', {'ads': ads})
+    return render(request, 'list.html', {'ads': ads})

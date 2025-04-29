@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>广告列表</title>
+</head>
+<body>
+    <h1>广告列表</h1>
+    <ul>
+        {% for ad in ads %}
+            <li>{{ ad.name }} - {{ ad.status }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

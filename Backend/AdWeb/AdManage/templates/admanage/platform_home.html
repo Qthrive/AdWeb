@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>广告管理平台首页</title>
+</head>
+<body>
+    <h1>欢迎来到广告管理平台！</h1>
+    {% if user.is_authenticated %}
+        <p>{{ user.username }}！欢迎回来。</p>
+        <p><a href="{% url 'users:logout' %}">退出登录</a></p>
+    {% else %}
+        <p>请先 <a href="{% url 'users:login' %}?next={{ request.path }}">登录</a>。</p>
+    {% endif %}
+    <p>这里是广告管理平台的首页，你可以在这里进行各种操作。</p>
+    <p><a href="{% url 'users:profile' %}">查看/修改个人资料</a></p>
+    </body>
+</html>

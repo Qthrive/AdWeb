@@ -1,7 +1,7 @@
 import random
 import string
 from django.core.mail import send_mail
-from .models import VarificationCode
+from .models import ValidationCode
 from django.utils import timezone
 
 def generate_code(length=6):
@@ -12,7 +12,7 @@ def send_verification_email(user):
     """Send a verification email to the user."""
     code = generate_code()
     expire_at = timezone.now() + timezone.timedelta(minutes=10)  # Code expires in 10 minutes
-    VarificationCode.objects.update_or_create(
+    ValidationCode.objects.update_or_create(
         user=user,
         defaults={'code': code, 'expire_at': expire_at}
     )

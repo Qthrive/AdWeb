@@ -11,6 +11,10 @@ class Ad(models.Model):
         ('rejected','已拒绝'),
         ('deleted','已删除')
     ]
+
+    # 广告状态
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+
     PLACEMENT_CHOICES = [
         ('banner','横幅广告'),
         ('sidebar','侧边栏广告'),
@@ -20,7 +24,12 @@ class Ad(models.Model):
     # 广告ID
     advertiser = models.ForeignKey('Users.User', on_delete=models.CASCADE, related_name='ads')
     # 类型
-    placement_type = models.CharField(max_length=20, choices=PLACEMENT_CHOICES, default='banner')
+    # placement_type = models.CharField(max_length=20, choices=PLACEMENT_CHOICES, default='banner')
+    placement = models.ForeignKey(
+        'AdPlacement',
+        on_delete=models.CASCADE,
+        related_name='ads'
+    )
     # 预算
     budget = models.DecimalField(max_digits=10, decimal_places=2)
     # daily_limit
@@ -54,7 +63,7 @@ class Ad(models.Model):
         folder_path = os.path.join('ads', 'images')
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
-    
+
 class AdPlacement(models.Model):
     PLACEMENT_CHOICES = [
         ('banner','横幅广告'),
@@ -62,7 +71,12 @@ class AdPlacement(models.Model):
         ('popup','弹窗广告'),
         ('text','文字广告'),
     ]
-    placement_type = models.CharField(max_length=20, choices=Ad.PLACEMENT_CHOICES, default='banner')
+    placement_type = models.CharField(
+        max_length=20,
+        choices=Ad.PLACEMENT_CHOICES,  # 统一使用 Ad 的选择项
+        default='banner',
+        unique=True  # 确保广告位类型唯一
+    )
     # 区域大小
     dimension = models.CharField(max_length=20, blank=True, null=True)
     # price_per_day

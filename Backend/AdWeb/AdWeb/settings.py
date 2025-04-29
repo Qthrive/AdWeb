@@ -27,16 +27,24 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+AUTH_USER_MODEL = 'Users.User'
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    # 'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'AdWeb',
+    'Users',
+    'Payment',
+    'AdAudit',
+    'AdManage',
+    'AdPlace',
+    'DataShow',
 ]
 
 MIDDLEWARE = [
@@ -75,8 +83,15 @@ WSGI_APPLICATION = 'AdWeb.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'adweb',  # 数据库名称
+        'USER': 'root',  # MySQL 用户名
+        'PASSWORD': 'sql**--',  # MySQL 密码
+        'HOST': 'localhost',  # 数据库主机，通常为 localhost
+        'PORT': '3306',  # MySQL 默认端口
+        'OPTIONS': {
+            'init_command':"SET time_zone = '+8:00'",
+        },
     }
 }
 
@@ -105,17 +120,15 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
-
+USE_L10N = True
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
-STATIC_URL = 'static/'
+# https://docs.djangoproject.com/en/5.1/howto/static-files/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -129,3 +142,24 @@ EMAIL_HOST_USER = 'qthrive@126.com'
 EMAIL_HOST_PASSWORD = 'EZNVNnJmjG9tSbzf'
 EMAIL_USE_SSL = True
 EMAIL_USE_TLS = False
+
+AUTHENTICATION_BACKENDS = [
+    'Users.backends.EmailBackend',  # 自定义的 EmailBackend
+    'django.contrib.auth.backends.ModelBackend',  # 默认的认证后端
+]
+
+# 静态文件的 URL 前缀
+STATIC_URL = '/static/'
+# 静态文件收集的目标目录
+STATIC_ROOT = BASE_DIR / "staticfiles"
+# 静态文件的目录
+STATICFILES_DIRS = [
+    BASE_DIR / "static",  # 确保项目根目录下有一个 static 文件夹
+]
+
+LOGIN_URL = '/users/login/'
+LOGIN_REDIRECT_URL = 'admanage:platform_home'
+LOGOUT_REDIRECT_URL = '/users/login/'  # 登出后重定向的 URL
+
+# SESSION_ENGINE = 'django.contrib.sessions.backends.file'
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'

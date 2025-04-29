@@ -1,7 +1,8 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
+from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from django.core.exceptions import ValidationError
 from .models import User
+from django.contrib.auth.forms import PasswordResetForm as DjangoPasswordResetForm
 
 # 注册表单
 class RegistrationForm(UserCreationForm):
@@ -29,7 +30,7 @@ class RegistrationForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ('email', 'username' 'password1', 'password2')
+        fields = ['email', 'username', 'password1', 'password2']
         labels = {
             'email': '邮箱',
             'username': '用户名',
@@ -39,13 +40,20 @@ class RegistrationForm(UserCreationForm):
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
-        if User.objects.filter(email=email).exists():
-            raise ValidationError("该邮箱已被注册")
-        return email
+        try:
+            existing_user = User.objects.get(email=email)
+            if not existing_user.is_verified:
+                # 如果用户未验证，允许重新注册
+                return email
+            else:
+                raise ValidationError("该邮箱已被注册且已验证")
+        except User.DoesNotExist:
+            # 如果用户不存在，正常返回邮箱
+            return email
     
 # 登录表单
-class LoginForm(AuthenticationForm):
-    username = forms.EmailField(
+class LoginForm(forms.Form):
+    email = forms.EmailField(
         label='邮箱',
         max_length=254,
         widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': '请输入邮箱'}),
@@ -58,9 +66,10 @@ class LoginForm(AuthenticationForm):
 
     class Meta:
         model = User
-        fields = ('username', 'password')
+        # fields = ['email', 'password']
+        fields = ('email', 'password')
         labels = {
-            'username': '邮箱',
+            'email': '邮箱',
             'password': '密码',
         }
 
@@ -97,14 +106,21 @@ class CustomPasswordChangeForm(PasswordChangeForm):
             raise ValidationError("两次输入的密码不一致")
         return new_password2
     
-# 修改个人资料表单
+class CustomPasswordResetForm(DjangoPasswordResetForm):
+    def save(self, domain_override=None, subject_template_name='registration/password_reset_subject.txt',
+             email_template_name='registration/password_reset_email.html',
+             use_https=False, token_generator=None, from_email=None,
+             html_email_template_name=None, extra_email_context=None):
+        email = self.cleaned_data['email']
+        print(f"尝试重置密码的邮箱: {email}")
+        active_users = User.objects.filter(email__iexact=email, is_active=True)
+        for user in active_users:
+            print(f"找到激活用户: {user.email}, ID: {user.id}")
+        return super().save(domain_override, subject_template_name, email_template_name, use_https,
+                            token_generator, from_email, html_email_template_name, extra_email_context)
+    
+# 修改个人资料表单 (仅修改用户名)
 class ProfileForm(forms.ModelForm):
-    email = forms.EmailField(
-        label='邮箱',
-        max_length=254,
-        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': '请输入邮箱'}),
-    )
-
     username = forms.CharField(
         label='用户名',
         max_length=150,
@@ -113,17 +129,16 @@ class ProfileForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ('username', 'email')
+        fields = ('username',)  # 只包含 username 字段
         widgets = {
             'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入用户名'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': '请输入邮箱'}),
         }
-    
-    def clean_email(self):
-        email = self.cleaned_data.get('email')
-        if User.objects.exclude(pk=self.instance.pk).filter(email=email).exists():
-            raise ValidationError("该邮箱已被注册")
-        return email
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if User.objects.exclude(pk=self.instance.pk).filter(username=username).exists():
+            raise ValidationError("该用户名已被注册")
+        return username
     
 # 其他表单可以根据需要添加
 # 例如：重置密码表单、验证邮箱表单等
