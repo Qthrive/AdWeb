@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>广告投放平台 - 购买广告</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        color: #333;
+        margin: 0;
+      }
+      header {
+        background-color: #333;
+        color: #fff;
+        padding: 10px 0;
+        text-align: center;
+        margin: 0; /* 去掉上下边距 */
+      }
+      .content {
+        background: white;
+        padding: 20px 20px 20px 60px;
+        margin: 0 auto 20px;
+        width: 80%;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      nav a {
+        color: white;
+        margin: 0 15px;
+        text-decoration: none;
+      }
+      h1,
+      h2,
+      h3 {
+        color: #4caf50;
+      }
+      .footer {
+        text-align: center;
+        padding: 10px 0;
+        margin: 0; /* 去掉上下边距 */
+        background-color: #333;
+        color: white;
+        width: 100%; /* 宽度占满整个页面 */
+        bottom: 0; /* 底部对齐 */
+      }
+
+      .close-button:hover {
+        background-color: #555;
+      }
+      .purchase-form {
+        width: 95%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .purchase-form input[type="text"],
+      .purchase-form input[type="number"],
+      .purchase-form textarea,
+      .purchase-form input[type="file"] {
+        width: 98%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      .input-hint {
+        font-size: 0.9em;
+        color: #777;
+        margin-left: 5px;
+      }
+
+      .purchase-form button {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+      }
+      .purchase-form button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+      .preview {
+        margin-top: 20px;
+        text-align: center;
+      }
+      .preview img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>广告投放平台</h1>
+      <nav>
+        <a href="mainlogin.html">首页</a>
+        <a href="purchase.html">购买广告</a>
+        <a href="manage-account.html">管理账户</a>
+        <a href="mainlogout.html">登出</a>
+      </nav>
+    </header>
+
+    <div class="content">
+      <h1>购买广告</h1>
+      <p>在这里您可以方便地购买广告。请填写以下信息以完成购买。</p>
+
+      <form class="purchase-form" id="purchase-form">
+        <label for="ad-title">广告标题：</label>
+        <input
+          type="text"
+          id="ad-title"
+          name="ad-title"
+          required
+          placeholder="请输入广告的标题"
+        />
+
+        <label for="ad-description">广告描述：</label>
+        <textarea
+          id="ad-description"
+          name="ad-description"
+          rows="4"
+          required
+          placeholder="请输入广告的详细描述"
+        ></textarea>
+
+        <label for="product-url">产品链接：</label>
+        <input
+          type="text"
+          id="product-url"
+          name="product-url"
+          required
+          placeholder="请输入产品的URL地址"
+        />
+
+        <label for="budget">广告预算（元）：</label>
+        <input
+          type="number"
+          id="budget"
+          name="budget"
+          min="100"
+          required
+          placeholder="请输入广告预算，最小100元"
+        />
+
+        <label for="duration">广告时长（天）：</label>
+        <input
+          type="number"
+          id="duration"
+          name="duration"
+          min="1"
+          required
+          placeholder="请输入广告时长，最小1天"
+        />
+
+        <label for="ad-image">广告图片：</label>
+        <input
+          type="file"
+          id="ad-image"
+          name="ad-image"
+          accept="image/*"
+          required
+        />
+
+        <div class="preview">
+          <img
+            id="preview-image"
+            src="#"
+            alt="广告图片预览"
+            style="display: none"
+          />
+        </div>
+
+        <button type="submit" id="submit-button" disabled>提交订单</button>
+      </form>
+    </div>
+
+    <div class="footer">
+      <p>版权所有 © 2025 软件舞蹈</p>
+    </div>
+
+    <script>
+      document
+        .getElementById("purchase-form")
+        .addEventListener("input", function () {
+          var form = document.getElementById("purchase-form");
+          var button = document.getElementById("submit-button");
+          button.disabled = !form.checkValidity();
+        });
+
+      document
+        .getElementById("purchase-form")
+        .addEventListener("submit", function (event) {
+          event.preventDefault(); // 阻止表单的默认提交行为
+          var form = document.getElementById("purchase-form");
+          if (form.checkValidity()) {
+            // 如果表单有效，执行跳转
+            window.location.href = "purchase success!.html";
+          }
+        });
+
+      // 显示图片预览
+      document
+        .getElementById("ad-image")
+        .addEventListener("change", function (event) {
+          var input = event.target;
+          if (input.files && input.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+              var img = document.getElementById("preview-image");
+              img.src = e.target.result;
+              img.style.display = "block";
+            };
+            reader.readAsDataURL(input.files[0]);
+          }
+        });
+    </script>
+  </body>
+</html>

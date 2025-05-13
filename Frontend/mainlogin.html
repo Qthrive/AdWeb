@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>广告投放平台 - 用户中心</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        color: #333;
+        margin: 0;
+      }
+      header {
+        background-color: #333;
+        color: #fff;
+        padding: 10px 0;
+        text-align: center;
+        margin: 0; /* 去掉上下边距 */
+      }
+      .content {
+        background: white;
+        padding: 20px 20px 20px 60px;
+        margin: 0 auto 20px; /* 去掉上边距，保留下边距 */
+        width: 80%;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      nav a {
+        color: white;
+        margin: 0 15px;
+        text-decoration: none;
+      }
+      h1,
+      h2,
+      h3 {
+        color: #4caf50;
+      }
+      .footer {
+        text-align: center;
+        padding: 10px 0;
+        margin: 0; /* 去掉上下边距 */
+        background-color: #333;
+        color: white;
+        position: fixed; /* 固定在页面底部 */
+        width: 100%; /* 宽度占满整个页面 */
+        bottom: 0; /* 底部对齐 */
+      }
+      .sidebar {
+        background-color: #ddd;
+        padding: 10px;
+        width: 10%;
+        float: left;
+        margin-top: 300px; /* 根据需要调整 */
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        position: relative; /* 使得关闭按钮可以绝对定位 */
+        cursor: pointer; /* 改变鼠标悬停时的指针样式 */
+      }
+      .sidebar a {
+        color: inherit; /* 继承父元素的颜色 */
+        text-decoration: none;
+      }
+      .close-button {
+        position: absolute; /* 绝对定位 */
+        top: 3px; /* 调整关闭按钮的垂直位置 */
+        right: 3px; /* 调整关闭按钮的水平位置 */
+        background-color: #333;
+        color: white;
+        padding: 2px 4px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      .close-button:hover {
+        background-color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>广告投放平台</h1>
+      <nav>
+        <a href="mainlogin.html">首页</a>
+        <a href="purchase.html">购买广告</a>
+        <a href="manage-account.html">管理账户</a>
+        <a href="mainlogout.html">登出</a>
+      </nav>
+    </header>
+
+    <div
+      id="sidebar"
+      class="sidebar"
+      onclick="window.location.href='https://ys.mihoyo.com/?utm_source=backup307&from_channel=backup307#/'"
+    >
+      <button
+        class="close-button"
+        onclick="event.stopPropagation(); this.parentElement.style.display='none';"
+      >
+        关闭
+      </button>
+      <h2>夏季特惠</h2>
+      <p>即刻购买广告，享受9折优惠！</p>
+      <a
+        href="https://ys.mihoyo.com/?utm_source=backup307&from_channel=backup307#/"
+        >立即购买</a
+      >
+    </div>
+
+    <div class="content">
+      <h1>欢迎，用户名称！</h1>
+      <p>感谢您使用我们的广告投放平台。在这里您可以方便地管理您的广告活动。</p>
+
+      <h3>您的广告活动</h3>
+      <p>您还没有任何广告活动，点击“购买广告”开始您的第一次广告投放。</p>
+    </div>
+
+    <div class="footer">
+      <p>版权所有 © 2025 软件舞蹈</p>
+    </div>
+  </body>
+</html>
