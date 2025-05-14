@@ -1,0 +1,222 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}{{ ad.name }} - 数据统计 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>{{ ad.name }} - 数据统计</h2>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-primary" id="exportData">
+            <i class="fas fa-download"></i> 导出数据
+        </button>
+        <a href="{% url 'admanage:ad_detail' campaign.id ad.id %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> 返回详情
+        </a>
+    </div>
+</div>
+
+<!-- 时间范围选择 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="date_range" class="form-label">时间范围</label>
+                <select class="form-select" id="date_range" name="date_range">
+                    <option value="today" {% if date_range == 'today' %}selected{% endif %}>今天</option>
+                    <option value="yesterday" {% if date_range == 'yesterday' %}selected{% endif %}>昨天</option>
+                    <option value="last7days" {% if date_range == 'last7days' %}selected{% endif %}>最近7天</option>
+                    <option value="last30days" {% if date_range == 'last30days' %}selected{% endif %}>最近30天</option>
+                    <option value="custom" {% if date_range == 'custom' %}selected{% endif %}>自定义</option>
+                </select>
+            </div>
+            <div class="col-md-3 custom-date-range" {% if date_range != 'custom' %}style="display: none;"{% endif %}>
+                <label for="start_date" class="form-label">开始日期</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" 
+                       value="{{ start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-3 custom-date-range" {% if date_range != 'custom' %}style="display: none;"{% endif %}>
+                <label for="end_date" class="form-label">结束日期</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" 
+                       value="{{ end_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> 查询
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 数据概览 -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h6 class="card-title">展示次数</h6>
+                <h3 class="mb-0">{{ total_impressions|default:"0" }}</h3>
+                <small>较上期 {% if impression_change > 0 %}+{% endif %}{{ impression_change }}%</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h6 class="card-title">点击次数</h6>
+                <h3 class="mb-0">{{ total_clicks|default:"0" }}</h3>
+                <small>较上期 {% if click_change > 0 %}+{% endif %}{{ click_change }}%</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h6 class="card-title">点击率</h6>
+                <h3 class="mb-0">{{ ctr|default:"0%" }}</h3>
+                <small>较上期 {% if ctr_change > 0 %}+{% endif %}{{ ctr_change }}%</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h6 class="card-title">总花费</h6>
+                <h3 class="mb-0">¥{{ total_cost|default:"0.00" }}</h3>
+                <small>较上期 {% if cost_change > 0 %}+{% endif %}{{ cost_change }}%</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 趋势图表 -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">数据趋势</h5>
+    </div>
+    <div class="card-body">
+        <canvas id="trendChart" height="300"></canvas>
+    </div>
+</div>
+
+<!-- 详细数据表格 -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">详细数据</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>日期</th>
+                        <th>展示次数</th>
+                        <th>点击次数</th>
+                        <th>点击率</th>
+                        <th>花费</th>
+                        <th>平均点击成本</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in daily_data %}
+                    <tr>
+                        <td>{{ data.date|date:"Y-m-d" }}</td>
+                        <td>{{ data.impressions }}</td>
+                        <td>{{ data.clicks }}</td>
+                        <td>{{ data.ctr }}%</td>
+                        <td>¥{{ data.cost }}</td>
+                        <td>¥{{ data.cpc }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 时间范围选择联动
+    const dateRangeSelect = document.getElementById('date_range');
+    const customDateRange = document.querySelectorAll('.custom-date-range');
+    
+    dateRangeSelect.addEventListener('change', function() {
+        if (this.value === 'custom') {
+            customDateRange.forEach(el => el.style.display = 'block');
+        } else {
+            customDateRange.forEach(el => el.style.display = 'none');
+        }
+    });
+
+    // 趋势图表
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ dates|safe }},
+            datasets: [{
+                label: '展示次数',
+                data: {{ impressions|safe }},
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                fill: true,
+                tension: 0.1
+            }, {
+                label: '点击次数',
+                data: {{ clicks|safe }},
+                borderColor: 'rgb(75, 192, 192)',
+                tension: 0.1
+            }, {
+                label: '花费',
+                data: {{ costs|safe }},
+                borderColor: 'rgb(255, 159, 64)',
+                tension: 0.1,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            }
+        }
+    });
+
+    // 导出数据
+    document.getElementById('exportData').addEventListener('click', function() {
+        const table = document.querySelector('table');
+        const rows = Array.from(table.querySelectorAll('tr'));
+        
+        let csv = rows.map(row => {
+            return Array.from(row.querySelectorAll('th, td'))
+                .map(cell => `"${cell.textContent.trim()}"`)
+                .join(',');
+        }).join('\n');
+        
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = '{{ ad.name }}_数据统计_{{ start_date|date:"Ymd" }}_to_{{ end_date|date:"Ymd" }}.csv';
+        link.click();
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

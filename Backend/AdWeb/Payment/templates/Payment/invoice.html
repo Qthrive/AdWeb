@@ -1,0 +1,195 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}发票申请 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- 发票相关通知 -->
+    {% if invoice_notifications %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-info-circle"></i>
+        {% for n in invoice_notifications %}
+            <strong>{{ n.title }}</strong>：{{ n.content }}<br>
+        {% endfor %}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>发票申请</h2>
+        <div class="btn-group">
+            <a href="{% url 'payment:balance' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> 返回余额
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 发票申请表单 -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">申请发票</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">开票金额（元）</label>
+                            <div class="input-group">
+                                <span class="input-group-text">¥</span>
+                                <input type="number" class="form-control" id="amount" name="amount" 
+                                       required min="1" step="0.01" max="{{ max_amount }}">
+                                <div class="invalid-feedback">
+                                    请输入有效的开票金额（不超过可开票金额）
+                                </div>
+                            </div>
+                            <div class="form-text">可开票金额：¥{{ max_amount }}</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="title" class="form-label">发票抬头</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                            <div class="invalid-feedback">
+                                请输入发票抬头
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="tax_number" class="form-label">税号</label>
+                            <input type="text" class="form-control" id="tax_number" name="tax_number" required>
+                            <div class="invalid-feedback">
+                                请输入税号
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">接收邮箱</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                            <div class="invalid-feedback">
+                                请输入有效的邮箱地址
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">备注（选填）</label>
+                            <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> 提交申请
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 申请记录 -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">申请记录</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>申请时间</th>
+                                    <th>金额</th>
+                                    <th>状态</th>
+                                    <th>备注</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for invoice in invoices %}
+                                <tr>
+                                    <td>{{ invoice.created_at|date:"Y-m-d H:i" }}</td>
+                                    <td>¥{{ invoice.amount }}</td>
+                                    <td>
+                                        {% if invoice.status == 'pending' %}
+                                        <span class="badge bg-warning">处理中</span>
+                                        {% elif invoice.status == 'approved' %}
+                                        <span class="badge bg-success">已开具</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">已拒绝</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ invoice.description|default:"-" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">暂无申请记录</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 分页 -->
+                    {% if invoices.has_other_pages %}
+                    <nav class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            {% if invoices.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ invoices.previous_page_number }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+                            </li>
+                            {% endif %}
+
+                            {% for i in invoices.paginator.page_range %}
+                                {% if invoices.number == i %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ i }}</span>
+                                </li>
+                                {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if invoices.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ invoices.next_page_number }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

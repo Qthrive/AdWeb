@@ -1,0 +1,73 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}发票审核 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>发票审核</h2>
+    <a href="{% url 'payment:invoice_admin_list' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> 返回列表
+    </a>
+</div>
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">申请信息</h5>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">申请人</dt>
+            <dd class="col-sm-9">{{ invoice.user.username }}</dd>
+            <dt class="col-sm-3">金额</dt>
+            <dd class="col-sm-9">¥{{ invoice.amount }}</dd>
+            <dt class="col-sm-3">发票抬头</dt>
+            <dd class="col-sm-9">{{ invoice.company_name }}</dd>
+            <dt class="col-sm-3">税号</dt>
+            <dd class="col-sm-9">{{ invoice.tax_number }}</dd>
+            <dt class="col-sm-3">申请时间</dt>
+            <dd class="col-sm-9">{{ invoice.request_date|date:"Y-m-d H:i" }}</dd>
+            <dt class="col-sm-3">备注</dt>
+            <dd class="col-sm-9">{{ invoice.notes|default:"-" }}</dd>
+            <dt class="col-sm-3">当前状态</dt>
+            <dd class="col-sm-9">
+                {% if invoice.status == 'pending' %}
+                <span class="badge bg-warning">待处理</span>
+                {% elif invoice.status == 'approved' %}
+                <span class="badge bg-success">已批准</span>
+                {% elif invoice.status == 'issued' %}
+                <span class="badge bg-primary">已开具</span>
+                {% else %}
+                <span class="badge bg-danger">已拒绝</span>
+                {% endif %}
+            </dd>
+        </dl>
+    </div>
+</div>
+{% if invoice.status == 'pending' %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">审核操作</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="notes" class="form-label">处理备注（可选）</label>
+                <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" name="action" value="approve" class="btn btn-success">
+                    <i class="fas fa-check"></i> 批准
+                </button>
+                <button type="submit" name="action" value="reject" class="btn btn-danger">
+                    <i class="fas fa-times"></i> 拒绝
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> 该申请已处理，无需再次操作。
+</div>
+{% endif %}
+{% endblock %} 

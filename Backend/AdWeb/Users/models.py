@@ -27,4 +27,25 @@ class ValidationCode(models.Model):
 
     def is_expired(self):
         return timezone.now() > self.expire_at
+
+
+class Notification(models.Model):
+    STATUS_CHOICES = [
+        ('unread', '未读'),
+        ('read', '已读'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications', verbose_name='接收用户')
+    title = models.CharField(max_length=100, verbose_name='标题')
+    content = models.TextField(verbose_name='内容')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='unread', verbose_name='状态')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    read_at = models.DateTimeField(null=True, blank=True, verbose_name='阅读时间')
+
+    class Meta:
+        verbose_name = '通知'
+        verbose_name_plural = '通知'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.title}"
     

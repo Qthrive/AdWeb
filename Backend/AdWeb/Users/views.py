@@ -7,7 +7,7 @@ from .utils import send_verification_email
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.utils.timezone import now
-from .models import ValidationCode
+from .models import ValidationCode, Notification
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -15,6 +15,7 @@ from django.core.mail import send_mail
 from django.http import HttpResponse
 from django.contrib.auth.views import PasswordResetView as DjangoPasswordResetView
 from .forms import CustomPasswordResetForm
+from django.core.paginator import Paginator
 
 User = get_user_model()
 
@@ -171,14 +172,11 @@ def change_password(request):
 def registration_sent(request):
     return render(request, 'registration_sent.html')  # 页面提示用户检查邮箱进行验证
 
-
-
 def activation_success(request):
     return render(request, 'activation_success.html')  # 激活成功页面
 
 def activation_failed(request):
     return render(request, 'activation_failed.html')  # 激活失败页面
-
 
 class CustomPasswordResetView(DjangoPasswordResetView):
     form_class = CustomPasswordResetForm
@@ -190,3 +188,28 @@ class CustomPasswordResetView(DjangoPasswordResetView):
     def form_invalid(self, form):
         print("PasswordResetForm 验证失败:", form.errors)
         return super().form_invalid(form)
+
+@login_required
+def notification_list(request):
+    user = request.user
+    notifications = Notification.objects.filter(user=user).order_by('-created_at')
+    paginator = Paginator(notifications, 10)
+    page = request.GET.get('page')
+    notifications_page = paginator.get_page(page)
+
+    # 标记为已读（通过GET参数或POST）
+    mark_read_id = request.GET.get('read')
+    if mark_read_id:
+        try:
+            n = Notification.objects.get(id=mark_read_id, user=user)
+            n.status = 'read'
+            n.read_at = timezone.now()
+            n.save()
+        except Notification.DoesNotExist:
+            pass
+        return redirect('users:notification_list')
+
+    context = {
+        'notifications': notifications_page,
+    }
+    return render(request, 'Users/notification_list.html', context)

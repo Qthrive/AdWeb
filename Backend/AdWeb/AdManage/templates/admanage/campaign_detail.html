@@ -1,0 +1,122 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}{{ campaign.name }} - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>{{ campaign.name }}</h2>
+    <div class="btn-group">
+        <a href="{% url 'admanage:campaign_edit' campaign.id %}" class="btn btn-outline-primary">
+            <i class="fas fa-edit"></i> 编辑活动
+        </a>
+        <a href="{% url 'admanage:campaign_delete' campaign.id %}" class="btn btn-outline-danger">
+            <i class="fas fa-trash"></i> 删除活动
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 活动概览 -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">活动概览</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <span>状态</span>
+                    <span class="badge bg-{{ campaign.status|yesno:'success,warning,danger' }}">
+                        {{ campaign.get_status_display }}
+                    </span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span>总预算</span>
+                    <span>¥{{ campaign.budget }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span>已消耗</span>
+                    <span>¥{{ total_spent }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span>剩余预算</span>
+                    <span>¥{{ remaining_budget }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span>开始时间</span>
+                    <span>{{ campaign.start_date|date:"Y-m-d H:i" }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>结束时间</span>
+                    <span>{{ campaign.end_date|date:"Y-m-d H:i" }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 广告列表 -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">广告列表</h5>
+                <a href="{% url 'admanage:ad_create' campaign.id %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> 创建广告
+                </a>
+            </div>
+            <div class="card-body">
+                {% if ads %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>广告名称</th>
+                                    <th>状态</th>
+                                    <th>预算</th>
+                                    <th>已消耗</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ad in ads %}
+                                <tr>
+                                    <td>{{ ad.name }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ ad.status|yesno:'success,warning,danger' }}">
+                                            {{ ad.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>¥{{ ad.budget }}</td>
+                                    <td>¥{{ ad.calculate_remaining_budget }}</td>
+                                    <td>{{ ad.created_at|date:"Y-m-d H:i" }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{% url 'admanage:ad_detail' campaign.id ad.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> 查看
+                                            </a>
+                                            <a href="{% url 'admanage:ad_edit' campaign.id ad.id %}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit"></i> 编辑
+                                            </a>
+                                            <a href="{% url 'admanage:ad_delete' campaign.id ad.id %}" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i> 删除
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-ad fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">暂无广告</p>
+                        <a href="{% url 'admanage:ad_create' campaign.id %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus"></i> 创建第一个广告
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

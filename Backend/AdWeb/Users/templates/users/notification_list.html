@@ -1,0 +1,69 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}通知中心 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>通知中心</h2>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">全部通知</h5>
+        </div>
+        <div class="card-body">
+            {% if notifications %}
+            <ul class="list-group list-group-flush">
+                {% for n in notifications %}
+                <li class="list-group-item d-flex justify-content-between align-items-center {% if n.status == 'unread' %}list-group-item-warning{% endif %}">
+                    <div>
+                        <strong>{{ n.title }}</strong>
+                        <span class="text-muted small ms-2">{{ n.created_at|date:"Y-m-d H:i" }}</span>
+                        <div class="mt-1">{{ n.content }}</div>
+                    </div>
+                    <div>
+                        {% if n.status == 'unread' %}
+                        <a href="?read={{ n.id }}" class="btn btn-sm btn-outline-primary">标记为已读</a>
+                        {% else %}
+                        <span class="badge bg-secondary">已读</span>
+                        {% endif %}
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="text-center text-muted">暂无通知</div>
+            {% endif %}
+
+            <!-- 分页 -->
+            {% if notifications.has_other_pages %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if notifications.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ notifications.previous_page_number }}">&laquo;</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                    {% endif %}
+                    {% for i in notifications.paginator.page_range %}
+                        {% if notifications.number == i %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                        {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if notifications.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ notifications.next_page_number }}">&raquo;</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

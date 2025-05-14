@@ -1,0 +1,112 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}{% if placement %}编辑广告位{% else %}新建广告位{% endif %} - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>{% if placement %}编辑广告位{% else %}新建广告位{% endif %}</h2>
+    <div class="btn-group">
+        <a href="{% url 'adplace:placement_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> 返回列表
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">广告位名称</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ placement.name|default:'' }}" required>
+                        <div class="invalid-feedback">
+                            请输入广告位名称
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="type" class="form-label">广告类型</label>
+                        <select class="form-select" id="type" name="type" required>
+                            <option value="">请选择</option>
+                            <option value="banner" {% if placement.type == 'banner' %}selected{% endif %}>横幅广告</option>
+                            <option value="popup" {% if placement.type == 'popup' %}selected{% endif %}>弹窗广告</option>
+                            <option value="text" {% if placement.type == 'text' %}selected{% endif %}>文字广告</option>
+                        </select>
+                        <div class="invalid-feedback">
+                            请选择广告类型
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="width" class="form-label">宽度（像素）</label>
+                            <input type="number" class="form-control" id="width" name="width" 
+                                   value="{{ placement.width|default:'' }}" required min="1">
+                            <div class="invalid-feedback">
+                                请输入有效的宽度
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="height" class="form-label">高度（像素）</label>
+                            <input type="number" class="form-control" id="height" name="height" 
+                                   value="{{ placement.height|default:'' }}" required min="1">
+                            <div class="invalid-feedback">
+                                请输入有效的高度
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="price" class="form-label">价格（元/天）</label>
+                        <input type="number" class="form-control" id="price" name="price" 
+                               value="{{ placement.price|default:'' }}" required min="0" step="0.01">
+                        <div class="invalid-feedback">
+                            请输入有效的价格
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">描述</label>
+                        <textarea class="form-control" id="description" name="description" 
+                                  rows="3">{{ placement.description|default:'' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="status" class="form-label">状态</label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="active" {% if placement.status == 'active' %}selected{% endif %}>可用</option>
+                            <option value="inactive" {% if placement.status == 'inactive' %}selected{% endif %}>停用</option>
+                        </select>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

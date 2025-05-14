@@ -1,0 +1,41 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}删除广告位 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>删除广告位</h2>
+    <div class="btn-group">
+        <a href="{% url 'adplace:placement_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> 返回列表
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h4 class="alert-heading">警告！</h4>
+                    <p>您确定要删除广告位 "{{ placement.name }}" 吗？</p>
+                    <hr>
+                    <p class="mb-0">此操作不可恢复，删除后将无法使用该广告位。</p>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> 确认删除
+                        </button>
+                        <a href="{% url 'adplace:placement_list' %}" class="btn btn-outline-secondary">
+                            取消
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

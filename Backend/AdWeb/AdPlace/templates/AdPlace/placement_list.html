@@ -1,0 +1,137 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}广告位管理 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>广告位管理</h2>
+    <div class="btn-group">
+        {% if user.is_staff %}
+        <a href="{% url 'adplace:placement_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 新建广告位
+        </a>
+        {% endif %}
+        <a href="{% url 'admanage:platform_home' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> 返回首页
+        </a>
+    </div>
+</div>
+
+<!-- 筛选器 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="type" class="form-label">广告类型</label>
+                <select class="form-select" id="type" name="type">
+                    <option value="">全部</option>
+                    <option value="banner" {% if type == 'banner' %}selected{% endif %}>横幅广告</option>
+                    <option value="popup" {% if type == 'popup' %}selected{% endif %}>弹窗广告</option>
+                    <option value="text" {% if type == 'text' %}selected{% endif %}>文字广告</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status" class="form-label">状态</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">全部</option>
+                    <option value="active" {% if status == 'active' %}selected{% endif %}>可用</option>
+                    <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>停用</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="search" class="form-label">搜索</label>
+                <input type="text" class="form-control" id="search" name="search" 
+                       value="{{ search }}" placeholder="输入广告位名称">
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> 查询
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 广告位列表 -->
+<div class="row">
+    {% for placement in placements %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ placement.name }}</h5>
+                <div class="mb-3">
+                    <span class="badge {% if placement.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ placement.get_status_display }}
+                    </span>
+                    <span class="badge bg-info">{{ placement.get_type_display }}</span>
+                </div>
+                <p class="card-text">
+                    <strong>尺寸：</strong>{{ placement.width }} x {{ placement.height }}<br>
+                    <strong>价格：</strong>¥{{ placement.price }}/天<br>
+                    <strong>描述：</strong>{{ placement.description|default:"无" }}
+                </p>
+                {% if user.is_staff %}
+                <div class="btn-group w-100">
+                    <a href="{% url 'adplace:placement_edit' placement.id %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit"></i> 编辑
+                    </a>
+                    <a href="{% url 'adplace:placement_delete' placement.id %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash"></i> 删除
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            暂无广告位
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 分页 -->
+{% if placements.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if placements.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ placements.previous_page_number }}{% if type %}&type={{ type }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link"><i class="fas fa-chevron-left"></i></span>
+        </li>
+        {% endif %}
+
+        {% for i in placements.paginator.page_range %}
+            {% if placements.number == i %}
+            <li class="page-item active">
+                <span class="page-link">{{ i }}</span>
+            </li>
+            {% else %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ i }}{% if type %}&type={{ type }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}">{{ i }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if placements.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ placements.next_page_number }}{% if type %}&type={{ type }}{% endif %}{% if status %}&status={{ status }}{% endif %}{% if search %}&search={{ search }}{% endif %}">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+            <span class="page-link"><i class="fas fa-chevron-right"></i></span>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %} 

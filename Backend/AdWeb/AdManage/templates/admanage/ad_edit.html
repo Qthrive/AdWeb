@@ -1,0 +1,168 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}编辑广告 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>编辑广告</h2>
+    <a href="{% url 'admanage:ad_detail' campaign.id ad.id %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> 返回详情
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" id="adEditForm">
+            {% csrf_token %}
+            
+            <!-- 广告名称 -->
+            <div class="mb-3">
+                <label for="name" class="form-label">广告名称</label>
+                <input type="text" class="form-control" id="name" name="name" value="{{ ad.name }}" required>
+                <div class="invalid-feedback">请输入广告名称</div>
+            </div>
+
+            <!-- 广告位选择 -->
+            <div class="mb-3">
+                <label for="ad_placement" class="form-label">广告位</label>
+                <select class="form-select" id="ad_placement" name="ad_placement" required>
+                    <option value="">请选择广告位</option>
+                    {% for placement in ad_placements %}
+                        <option value="{{ placement.id }}" 
+                                data-price="{{ placement.price }}"
+                                {% if placement.id == ad.ad_placement.id %}selected{% endif %}>
+                            {{ placement.name }} (¥{{ placement.price }}/天)
+                        </option>
+                    {% endfor %}
+                </select>
+                <div class="invalid-feedback">请选择广告位</div>
+            </div>
+
+            <!-- 预算设置 -->
+            <div class="mb-3">
+                <label for="budget" class="form-label">预算 (¥)</label>
+                <input type="number" class="form-control" id="budget" name="budget" 
+                       value="{{ ad.budget }}" min="0" step="0.01" required>
+                <div class="invalid-feedback">请输入有效的预算金额</div>
+            </div>
+
+            <!-- 广告素材 -->
+            <div class="mb-3">
+                <label for="creative" class="form-label">广告素材</label>
+                <input type="file" class="form-control" id="creative" name="creative" accept="image/*">
+                <div class="form-text">当前素材：<a href="{{ ad.creative_url }}" target="_blank">查看</a></div>
+                <div class="invalid-feedback">请上传广告素材</div>
+            </div>
+
+            <!-- 目标链接 -->
+            <div class="mb-3">
+                <label for="target_url" class="form-label">目标链接</label>
+                <input type="url" class="form-control" id="target_url" name="target_url" 
+                       value="{{ ad.target_url }}" required>
+                <div class="invalid-feedback">请输入有效的目标链接</div>
+            </div>
+
+            <!-- 投放时间 -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="start_date" class="form-label">开始时间</label>
+                    <input type="datetime-local" class="form-control" id="start_date" name="start_date" 
+                           value="{{ ad.start_date|date:'Y-m-d\TH:i' }}" required>
+                    <div class="invalid-feedback">请选择开始时间</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="end_date" class="form-label">结束时间</label>
+                    <input type="datetime-local" class="form-control" id="end_date" name="end_date" 
+                           value="{{ ad.end_date|date:'Y-m-d\TH:i' }}" required>
+                    <div class="invalid-feedback">请选择结束时间</div>
+                </div>
+            </div>
+
+            <!-- 广告描述 -->
+            <div class="mb-3">
+                <label for="description" class="form-label">广告描述</label>
+                <textarea class="form-control" id="description" name="description" rows="3">{{ ad.description }}</textarea>
+            </div>
+
+            <!-- 状态选择 -->
+            <div class="mb-3">
+                <label for="status" class="form-label">状态</label>
+                <select class="form-select" id="status" name="status" required>
+                    <option value="active" {% if ad.status == 'active' %}selected{% endif %}>投放中</option>
+                    <option value="paused" {% if ad.status == 'paused' %}selected{% endif %}>已暂停</option>
+                </select>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{% url 'admanage:ad_detail' campaign.id ad.id %}" class="btn btn-secondary">取消</a>
+                <button type="submit" class="btn btn-primary">保存更改</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化日期时间选择器
+    flatpickr("#start_date", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        minDate: "today"
+    });
+    
+    flatpickr("#end_date", {
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        minDate: "today"
+    });
+
+    // 表单验证
+    const form = document.getElementById('adEditForm');
+    form.addEventListener('submit', function(event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    });
+
+    // 广告位价格联动
+    const adPlacementSelect = document.getElementById('ad_placement');
+    const budgetInput = document.getElementById('budget');
+    
+    adPlacementSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const price = selectedOption.dataset.price;
+        if (price) {
+            budgetInput.value = price;
+        }
+    });
+
+    // 图片预览
+    const creativeInput = document.getElementById('creative');
+    creativeInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            // 检查文件大小（限制为2MB）
+            if (file.size > 2 * 1024 * 1024) {
+                alert('图片大小不能超过2MB');
+                this.value = '';
+                return;
+            }
+
+            // 检查图片尺寸
+            const img = new Image();
+            img.onload = function() {
+                if (this.width > 1920 || this.height > 1080) {
+                    alert('图片尺寸不能超过1920x1080');
+                    creativeInput.value = '';
+                }
+            };
+            img.src = URL.createObjectURL(file);
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

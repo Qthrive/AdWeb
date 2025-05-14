@@ -1,18 +1,158 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <title>广告管理平台首页</title>
-</head>
-<body>
-    <h1>欢迎来到广告管理平台！</h1>
-    {% if user.is_authenticated %}
-        <p>{{ user.username }}！欢迎回来。</p>
-        <p><a href="{% url 'users:logout' %}">退出登录</a></p>
-    {% else %}
-        <p>请先 <a href="{% url 'users:login' %}?next={{ request.path }}">登录</a>。</p>
-    {% endif %}
-    <p>这里是广告管理平台的首页，你可以在这里进行各种操作。</p>
-    <p><a href="{% url 'users:profile' %}">查看/修改个人资料</a></p>
-    </body>
-</html>
+{% extends 'AdManage/base.html' %}
+
+{% block title %}首页 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 账户概览 -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">账户概览</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <span>账户余额</span>
+                    <span class="text-primary">¥{{ balance }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-3">
+                    <span>总预算</span>
+                    <span>¥{{ total_budget }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>已消耗</span>
+                    <span>¥{{ total_spent }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 快捷操作 -->
+    <div class="col-md-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">快捷操作</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'admanage:campaign_create' %}" class="btn btn-primary w-100">
+                            <i class="fas fa-plus"></i> 创建广告活动
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="#" class="btn btn-success w-100">
+                            <i class="fas fa-wallet"></i> 账户充值
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="#" class="btn btn-info w-100">
+                            <i class="fas fa-chart-line"></i> 数据报表
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 广告活动列表 -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">最近广告活动</h5>
+        <a href="{% url 'admanage:campaign_list' %}" class="btn btn-sm btn-outline-primary">查看全部</a>
+    </div>
+    <div class="card-body">
+        {% if campaigns %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>活动名称</th>
+                            <th>状态</th>
+                            <th>预算</th>
+                            <th>已消耗</th>
+                            <th>开始时间</th>
+                            <th>结束时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for campaign in campaigns|slice:":5" %}
+                        <tr>
+                            <td>{{ campaign.name }}</td>
+                            <td>
+                                <span class="badge bg-{{ campaign.status|yesno:'success,warning,danger' }}">
+                                    {{ campaign.get_status_display }}
+                                </span>
+                            </td>
+                            <td>¥{{ campaign.budget }}</td>
+                            <td>¥{{ campaign.calculate_remaining_budget }}</td>
+                            <td>{{ campaign.start_date|date:"Y-m-d" }}</td>
+                            <td>{{ campaign.end_date|date:"Y-m-d" }}</td>
+                            <td>
+                                <a href="{% url 'admanage:campaign_detail' campaign.id %}" class="btn btn-sm btn-outline-primary">
+                                    查看
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-center text-muted">暂无广告活动</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 广告列表 -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">最近广告</h5>
+        <a href="#" class="btn btn-sm btn-outline-primary">查看全部</a>
+    </div>
+    <div class="card-body">
+        {% if ads %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>广告名称</th>
+                            <th>所属活动</th>
+                            <th>状态</th>
+                            <th>预算</th>
+                            <th>已消耗</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ad in ads|slice:":5" %}
+                        <tr>
+                            <td>{{ ad.name }}</td>
+                            <td>{{ ad.campaign.name }}</td>
+                            <td>
+                                <span class="badge bg-{{ ad.status|yesno:'success,warning,danger' }}">
+                                    {{ ad.get_status_display }}
+                                </span>
+                            </td>
+                            <td>¥{{ ad.budget }}</td>
+                            <td>¥{{ ad.calculate_remaining_budget }}</td>
+                            <td>{{ ad.created_at|date:"Y-m-d" }}</td>
+                            <td>
+                                <a href="#" class="btn btn-sm btn-outline-primary">
+                                    查看
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-center text-muted">暂无广告</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

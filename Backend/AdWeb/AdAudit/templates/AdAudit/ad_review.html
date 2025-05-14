@@ -1,0 +1,150 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}审核广告 - {{ ad.name }} - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>审核广告</h2>
+    <div class="btn-group">
+        <a href="{% url 'adaudit:ad_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> 返回列表
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 广告信息 -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">广告信息</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>广告名称</h6>
+                        <p>{{ ad.name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>广告主</h6>
+                        <p>{{ ad.advertiser.username }}</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>广告位</h6>
+                        <p>{{ ad.ad_placement.name }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>提交时间</h6>
+                        <p>{{ ad.created_at|date:"Y-m-d H:i" }}</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>投放时间</h6>
+                        <p>{{ ad.start_date|date:"Y-m-d" }} 至 {{ ad.end_date|date:"Y-m-d" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>预算</h6>
+                        <p>¥{{ ad.budget }}</p>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <h6>广告描述</h6>
+                    <p>{{ ad.description|default:"无" }}</p>
+                </div>
+                <div class="mb-3">
+                    <h6>目标链接</h6>
+                    <p><a href="{{ ad.target_url }}" target="_blank">{{ ad.target_url }}</a></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 广告素材 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">广告素材</h5>
+            </div>
+            <div class="card-body text-center">
+                <img src="{{ ad.creative_url.url }}" alt="{{ ad.name }}" class="img-fluid" style="max-height: 400px;">
+            </div>
+        </div>
+    </div>
+
+    <!-- 审核操作 -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">审核操作</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="action" class="form-label">审核结果</label>
+                        <select class="form-select" id="action" name="action" required>
+                            <option value="">请选择</option>
+                            <option value="approve">通过</option>
+                            <option value="reject">拒绝</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">审核意见</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-check"></i> 提交审核
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 审核历史 -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">审核历史</h5>
+            </div>
+            <div class="card-body">
+                {% for log in audit_logs %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge {% if log.action == 'approve' %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ log.get_action_display }}
+                        </span>
+                        <small class="text-muted">{{ log.created_at|date:"Y-m-d H:i" }}</small>
+                    </div>
+                    <p class="mb-1 mt-2">{{ log.reason }}</p>
+                    <small class="text-muted">审核人：{{ log.admin.username }}</small>
+                </div>
+                {% empty %}
+                <p class="text-muted mb-0">暂无审核记录</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const actionSelect = document.getElementById('action');
+    const reasonTextarea = document.getElementById('reason');
+    const form = document.querySelector('form');
+
+    form.addEventListener('submit', function(e) {
+        if (!actionSelect.value) {
+            e.preventDefault();
+            alert('请选择审核结果');
+            return;
+        }
+        if (!reasonTextarea.value.trim()) {
+            e.preventDefault();
+            alert('请填写审核意见');
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 
