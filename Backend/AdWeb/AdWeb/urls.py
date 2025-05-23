@@ -21,10 +21,11 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
-    path('users/', include('Users.urls', namespace='users')),
+    path('users/', include(('Users.urls', 'users'), namespace='users')),
     path('adplace/', include('AdPlace.urls', namespace='adplace')),
     path('payment/', include('Payment.urls', namespace='payment')),
-    path('', include('AdManage.urls', namespace='admanage')), # 根路径指向 AdManage
+    path('adaudit/', include(('AdAudit.urls', 'adaudit'), namespace='adaudit')),
+    path('', include('AdManage.urls', namespace='admanage'))
     # path('admanage/', include('AdManage.urls', namespace='admanage')), # 移除这一行
     # path('', user_views.home, name='home'), # 移除原来的根路径指向
 ]

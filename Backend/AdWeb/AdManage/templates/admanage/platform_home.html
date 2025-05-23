@@ -34,12 +34,20 @@
                 <h5 class="card-title mb-0">快捷操作</h5>
             </div>
             <div class="card-body">
-                <div class="row">                    <div class="col-md-6 mb-3">
+                <div class="row">
+                    <!-- {% if 1 %} -->
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'adaudit:ad_list' %}" class="btn btn-warning w-100">
+                            <i class="fas fa-check-circle"></i> 广告审核
+                        </a>
+                    </div>
+                    <!-- {% endif %} -->
+                    <div class="col-md-{% if user.is_staff %}4{% else %}6{% endif %} mb-3">
                         <a href="{% url 'admanage:campaign_create' %}" class="btn btn-primary w-100">
                             <i class="fas fa-plus"></i> 创建广告活动
                         </a>
                     </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-{% if user.is_staff %}4{% else %}6{% endif %} mb-3">
                         <a href="{% url 'payment:recharge' %}" class="btn btn-success w-100">
                             <i class="fas fa-wallet"></i> 账户充值
                         </a>
