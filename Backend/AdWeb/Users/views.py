@@ -1,7 +1,7 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.contrib.auth import update_session_auth_hash, logout
 from django.contrib.auth import authenticate, login as auth_login
-from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.decorators import login_required
 from .forms import RegistrationForm, LoginForm, ProfileForm, CustomPasswordChangeForm
 from .utils import send_verification_email
 from django.utils.http import urlsafe_base64_decode
@@ -27,31 +27,20 @@ def user_register(request):
             email = form.cleaned_data.get('email')
             try:
                 existing_user = User.objects.get(email=email)
-                if existing_user.audit_status == 'pending':
-                    form.add_error('email', "该邮箱已注册，正在等待管理员审核")
+                if not existing_user.is_verified:
+                    # 如果用户未验证，重新发送验证邮件
+                    existing_user.is_verified = False  # 设置为未验证
+                    send_verification_email(existing_user)
+                    return redirect('users:registration_sent')  # 提示用户检查邮箱
                 else:
-                    form.add_error('email', "该邮箱已被注册")
+                    form.add_error('email', "该邮箱已被注册且已验证")
             except User.DoesNotExist:
-                # 如果用户不存在，创建新用户
+                # 如果用户不存在，正常注册流程
                 user = form.save(commit=False)
-                user.is_active = False  # 设置为未激活，等待审核
-                user.audit_status = 'pending'  # 设置为待审核状态
-                user.register_ip = request.META.get('REMOTE_ADDR')
-                user.device_info = request.META.get('HTTP_USER_AGENT', '')
-                user.user_type = 'advertiser'  # 设置为广告主
+                user.is_verified = False  # 设置为未验证
                 user.save()
-
-                # 给管理员发送通知
-                admins = User.objects.filter(is_staff=True)
-                for admin in admins:
-                    Notification.objects.create(
-                        user=admin,
-                        title='新用户注册待审核',
-                        content=f'新用户 {user.username}（{user.email}）已注册，等待审核。'
-                    )
-
-                messages.success(request, '注册成功！请等待管理员审核，审核结果将通过邮件通知。')
-                return redirect('users:registration_sent')
+                send_verification_email(user)  # 发送验证邮件
+                return redirect('users:registration_sent')  # 提示用户检查邮箱
     else:
         form = RegistrationForm()
     return render(request, 'register.html', {'form': form})
@@ -75,34 +64,30 @@ def user_login(request):
         if form.is_valid():
             email = form.cleaned_data['email']
             password = form.cleaned_data['password']
-            user_type = form.cleaned_data['user_type']
             user = authenticate(request, email=email, password=password)
-            
+            print("用户认证结果:", user)
             if user:
-                # 检查用户类型是否匹配
-                if user_type == 'admin' and not user.is_staff:
-                    form.add_error(None, "您不是管理员用户")
-                    return render(request, 'login.html', {'form': form})
-                elif user_type == 'advertiser' and user.is_staff:
-                    form.add_error(None, "请使用管理员登录入口")
-                    return render(request, 'login.html', {'form': form})
-                
-                # 检查用户审核状态
-                if user.audit_status == 'pending':
-                    form.add_error(None, "您的账号正在等待管理员审核")
-                    return render(request, 'login.html', {'form': form})
-                elif user.audit_status == 'rejected':
-                    form.add_error(None, "您的注册申请已被拒绝，原因：" + (user.reject_reason or '未提供原因'))
-                    return render(request, 'login.html', {'form': form})
-                
-                # 登录成功
+                print("用户已认证")
                 auth_login(request, user)
-                messages.success(request, f"欢迎回来，{user.username}！")
+                print("用户登录成功")
+                request.session['last_login'] = timezone.now().isoformat()
+                request.session.modified = True
+                print("Session Key (after login):", request.session.session_key)
+                print("User is authenticated after login:", request.user.is_authenticated)
                 next_url = request.POST.get('next', '/')
+                print("重定向到:", next_url)
                 return redirect(next_url)
             else:
-                form.add_error(None, "无效的邮箱或密码")
+                print("用户认证失败")
+                if User.objects.filter(email=email, is_verified=False).exists():
+                    form.add_error(None, "您的账号尚未验证，请检查邮箱完成验证")
+                else:
+                    form.add_error(None, "无效的邮箱或密码")
+        else:
+            print("表单验证失败")
+            print("错误信息:", form.errors)
     else:
+        print("GET请求")
         form = LoginForm()
     return render(request, 'login.html', {'form': form, 'next': request.GET.get('next', '/')})
 
@@ -228,103 +213,3 @@ def notification_list(request):
         'notifications': notifications_page,
     }
     return render(request, 'Users/notification_list.html', context)
-
-@login_required
-@user_passes_test(lambda u: u.is_staff)
-def register_list(request):
-    """用户注册审核列表"""
-    status = request.GET.get('status', 'pending')  # 默认显示待审核
-    email = request.GET.get('email', '')
-    date_range = request.GET.get('date_range', '')
-
-    # 构建查询
-    users = User.objects.filter(user_type='advertiser').order_by('-date_joined')
-    
-    if status:
-        users = users.filter(audit_status=status)
-    if email:
-        users = users.filter(email__icontains=email)
-    
-    # 时间范围筛选
-    today = timezone.now().date()
-    if date_range == 'today':
-        users = users.filter(date_joined__date=today)
-    elif date_range == 'yesterday':
-        yesterday = today - timezone.timedelta(days=1)
-        users = users.filter(date_joined__date=yesterday)
-    elif date_range == 'last7days':
-        last_week = today - timezone.timedelta(days=7)
-        users = users.filter(date_joined__date__gte=last_week)
-    elif date_range == 'last30days':
-        last_month = today - timezone.timedelta(days=30)
-        users = users.filter(date_joined__date__gte=last_month)
-    
-    # 分页
-    paginator = Paginator(users, 10)  # 每页显示10条
-    page = request.GET.get('page')
-    users = paginator.get_page(page)
-    
-    context = {
-        'users': users,
-        'status': status,
-        'email': email,
-        'date_range': date_range,
-    }
-    return render(request, 'Users/register_list.html', context)
-
-@login_required
-@user_passes_test(lambda u: u.is_staff)
-def register_review(request, user_id):
-    """用户注册审核详情"""
-    from .utils import send_audit_result_email
-    user = get_object_or_404(User, id=user_id)
-    
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        reason = request.POST.get('reason')
-        
-        if not action or not reason:
-            messages.error(request, '请选择审核结果并填写审核意见')
-            return redirect('users:register_detail', user_id=user.id)
-        
-        try:
-            # 更新用户状态
-            if action == 'approve':
-                user.audit_status = 'approved'
-                user.is_active = True  # 允许用户登录
-                user.is_verified = True  # 标记为已验证
-                notification_title = '注册申请已通过'
-                notification_content = f'您的注册申请已通过审核。欢迎使用AdWeb广告管理平台！'
-            else:
-                user.audit_status = 'rejected'
-                user.reject_reason = reason
-                notification_title = '注册申请被拒绝'
-                notification_content = f'您的注册申请未通过审核。原因：{reason}'
-            
-            user.audit_time = timezone.now()
-            user.save()
-            
-            # 创建通知
-            Notification.objects.create(
-                user=user,
-                title=notification_title,
-                content=notification_content,
-                status='unread'
-            )
-            
-            # 发送邮件通知
-            try:
-                send_audit_result_email(user, action, reason)
-            except Exception as e:
-                messages.warning(request, f'邮件发送失败：{str(e)}，但审核状态已更新')
-            
-            messages.success(request, '审核完成')
-            return redirect('users:register_list')
-            
-        except Exception as e:
-            messages.error(request, f'审核失败：{str(e)}')
-    
-    context = {
-        'user': user,
-    }
-    return render(request, 'Users/register_detail.html', context)

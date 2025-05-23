@@ -18,86 +18,25 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'admanage:platform_home' %}">
-                            <i class="fas fa-home"></i> 首页
-                        </a>
-                    </li>
-                    
-                    {% if user.is_staff %}
-                    <!-- 管理员导航 -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'users:register_list' %}">
-                            <i class="fas fa-user-check"></i> 用户审核
-                        </a>
+                        <a class="nav-link" href="{% url 'admanage:platform_home' %}">首页</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'adaudit:ad_list' %}">
-                            <i class="fas fa-tasks"></i> 广告审核
-                        </a>
+                        <a class="nav-link" href="{% url 'admanage:campaign_list' %}">广告活动</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'adplace:placement_list' %}">
-                            <i class="fas fa-th-large"></i> 广告位管理
-                        </a>
+                        <a class="nav-link" href="{% url 'admanage:campaign_create' %}">创建活动</a>
                     </li>
-                    {% else %}
-                    <!-- 广告主导航 -->
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'admanage:campaign_list' %}">
-                            <i class="fas fa-ad"></i> 广告活动
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'admanage:campaign_create' %}">
-                            <i class="fas fa-plus"></i> 创建活动
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'adplace:placement_list' %}">
-                            <i class="fas fa-th-large"></i> 广告位列表
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'payment:recharge' %}">
-                            <i class="fas fa-wallet"></i> 账户充值
-                        </a>
-                    </li>
-                    {% endif %}
                 </ul>
-
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle"></i>
                             {{ request.user.username }}
-                            {% if user.is_staff %}
-                            <span class="badge bg-warning text-dark">管理员</span>
-                            {% else %}
-                            <span class="badge bg-info">广告主</span>
-                            {% endif %}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <a class="dropdown-item" href="{% url 'users:profile' %}">
-                                    <i class="fas fa-id-card"></i> 个人资料
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{% url 'users:notification_list' %}">
-                                    <i class="fas fa-bell"></i> 通知中心
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="{% url 'users:change_password' %}">
-                                    <i class="fas fa-key"></i> 修改密码
-                                </a>
-                            </li>
+                            <li><a class="dropdown-item" href="{% url 'users:profile' %}">个人资料</a></li>
+                            <li><a class="dropdown-item" href="{% url 'users:change_password' %}">修改密码</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item text-danger" href="{% url 'users:logout' %}">
-                                    <i class="fas fa-sign-out-alt"></i> 退出登录
-                                </a>
-                            </li>
+                            <li><a class="dropdown-item" href="{% url 'users:logout' %}">退出登录</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -122,4 +61,4 @@
     <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     {% block extra_js %}{% endblock %}
 </body>
-</html>
+</html> 
