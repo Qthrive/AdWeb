@@ -5,55 +5,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>用户注册</title>
+    <title>广告主注册 - AdWeb广告管理平台</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        .register-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+        .register-icon {
+            font-size: 3rem;
+            color: #0d6efd;
+            margin-bottom: 1rem;
+        }
+        .audit-notice {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+    </style>
 </head>
 
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center mb-4">用户注册</h1>
+    <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-6">
-                <form method="post" action="{% url 'users:register' %}">
-                    {% csrf_token %}
-                    <!-- 邮箱 -->
-                    <div class="mb-3">
-                        <label for="id_email" class="form-label">{{ form.email.label }}</label>
-                        {{ form.email|add_class:"form-control" }}
-                        {% if form.email.errors %}
-                        <div class="text-danger">{{ form.email.errors.0 }}</div>
-                        {% endif %}
+            <div class="col-md-8 col-lg-6">
+                <div class="register-container">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-ad register-icon"></i>
+                        <h2>广告主账号注册</h2>
+                        <p class="text-muted">申请成为AdWeb广告管理平台的广告主</p>
                     </div>
-                    <!-- 用户名 -->
-                    <div class="mb-3">
-                        <label for="id_username" class="form-label">{{ form.username.label }}</label>
-                        {{ form.username|add_class:"form-control" }}
-                        {% if form.username.errors %}
-                        <div class="text-danger">{{ form.username.errors.0 }}</div>
-                        {% endif %}
+                    
+                    <div class="audit-notice">
+                        <h5><i class="fas fa-info-circle"></i> 注册须知</h5>
+                        <p class="mb-0">注册成功后，您的账号需要经过管理员审核才能使用。审核结果将通过邮件通知，请确保填写正确的邮箱地址。</p>
                     </div>
-                    <!-- 密码 -->
-                    <div class="mb-3">
-                        <label for="id_password1" class="form-label">{{ form.password1.label }}</label>
-                        {{ form.password1|add_class:"form-control" }}
-                        {% if form.password1.errors %}
-                        <div class="text-danger">{{ form.password1.errors.0 }}</div>
-                        {% endif %}
+                    
+                    {% if messages %}
+                    <div class="alert alert-success mb-4">
+                        {% for message in messages %}
+                        {{ message }}
+                        {% endfor %}
                     </div>
-                    <!-- 确认密码 -->
-                    <div class="mb-3">
-                        <label for="id_password2" class="form-label">{{ form.password2.label }}</label>
-                        {{ form.password2|add_class:"form-control" }}
-                        {% if form.password2.errors %}
-                        <div class="text-danger">{{ form.password2.errors.0 }}</div>
-                        {% endif %}
-                    </div>
-                    <!-- 提交按钮 -->
-                    <button type="submit" class="btn btn-primary w-100">注册</button>
-                </form>
-                <p class="text-center mt-3">
-                    已有账号？<a href="{% url 'users:login' %}">登录</a>
-                </p>
+                    {% endif %}
+                    
+                    <form method="post" action="{% url 'users:register' %}">
+                        {% csrf_token %}
+                        <!-- 邮箱 -->
+                        <div class="mb-3">
+                            <label for="id_email" class="form-label">
+                                <i class="fas fa-envelope"></i> {{ form.email.label }}
+                            </label>
+                            {{ form.email|add_class:"form-control" }}
+                            {% if form.email.errors %}
+                            <div class="text-danger">{{ form.email.errors.0 }}</div>
+                            {% endif %}
+                            <small class="text-muted">请填写真实有效的邮箱，审核结果将发送至此邮箱</small>
+                        </div>
+                        <!-- 用户名 -->
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label">
+                                <i class="fas fa-user"></i> {{ form.username.label }}
+                            </label>
+                            {{ form.username|add_class:"form-control" }}
+                            {% if form.username.errors %}
+                            <div class="text-danger">{{ form.username.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <!-- 密码 -->
+                        <div class="mb-3">
+                            <label for="id_password1" class="form-label">
+                                <i class="fas fa-lock"></i> {{ form.password1.label }}
+                            </label>
+                            {{ form.password1|add_class:"form-control" }}
+                            {% if form.password1.errors %}
+                            <div class="text-danger">{{ form.password1.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <!-- 确认密码 -->
+                        <div class="mb-3">
+                            <label for="id_password2" class="form-label">
+                                <i class="fas fa-lock"></i> {{ form.password2.label }}
+                            </label>
+                            {{ form.password2|add_class:"form-control" }}
+                            {% if form.password2.errors %}
+                            <div class="text-danger">{{ form.password2.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <!-- 提交按钮 -->
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-user-plus"></i> 提交注册申请
+                        </button>
+                    </form>
+                    <p class="text-center mt-3">
+                        已有账号？<a href="{% url 'users:login' %}">立即登录</a>
+                    </p>
+                </div>
             </div>
         </div>
     </div>

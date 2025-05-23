@@ -156,7 +156,7 @@ def recharge(request):
 # 管理员权限判断
 
 def is_admin(user):
-    return hasattr(user, 'role') and user.role == 'admin'
+    return hasattr(user, 'user_type') and user.user_type == 'admin'
 
 @user_passes_test(is_admin)
 def invoice_admin_list(request):

@@ -94,7 +94,9 @@
         <h5 class="card-title mb-0">数据趋势</h5>
     </div>
     <div class="card-body">
-        <canvas id="trendChart" height="300"></canvas>
+        <div style="position: relative; height: 400px; width: 100%;">
+            <canvas id="trendChart"></canvas>
+        </div>
     </div>
 </div>
 
@@ -177,6 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             interaction: {
                 mode: 'index',
                 intersect: false,
@@ -186,6 +189,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     type: 'linear',
                     display: true,
                     position: 'left',
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    },
+                    ticks: {
+                        color: 'rgba(0,0,0,0.7)'
+                    }
                 },
                 y1: {
                     type: 'linear',
@@ -193,7 +202,31 @@ document.addEventListener('DOMContentLoaded', function() {
                     position: 'right',
                     grid: {
                         drawOnChartArea: false,
+                        color: 'rgba(0,0,0,0.05)'
                     },
+                    ticks: {
+                        color: 'rgba(0,0,0,0.7)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.05)'
+                    },
+                    ticks: {
+                        color: 'rgba(0,0,0,0.7)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
                 }
             }
         }
@@ -219,4 +252,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-{% endblock %} 
+{% endblock %}

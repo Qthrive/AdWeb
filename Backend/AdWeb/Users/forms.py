@@ -27,6 +27,12 @@ class RegistrationForm(UserCreationForm):
         label='确认密码',
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': '请再次输入密码'}),
     )
+    
+    phone = forms.CharField(
+        label='手机号',
+        max_length=11,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入手机号'}),
+    )
 
     class Meta:
         model = User
@@ -64,13 +70,19 @@ class LoginForm(forms.Form):
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': '请输入密码'}),
     )
 
+    user_type = forms.ChoiceField(
+        label='用户类型',
+        choices=[('advertiser', '广告主'), ('admin', '管理员')],
+        widget=forms.Select(attrs={'class': 'form-control mb-3'}),
+    )
+
     class Meta:
         model = User
-        # fields = ['email', 'password']
-        fields = ('email', 'password')
+        fields = ('email', 'password', 'user_type')
         labels = {
             'email': '邮箱',
             'password': '密码',
+            'user_type': '用户类型',
         }
 
 # 修改密码表单

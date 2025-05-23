@@ -3,13 +3,74 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>注册成功</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册申请已提交 - AdWeb广告管理平台</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 2rem 0;
+        }
+        .success-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 2rem;
+            text-align: center;
+        }
+        .success-icon {
+            font-size: 5rem;
+            color: #28a745;
+            margin-bottom: 1.5rem;
+        }
+        .steps {
+            text-align: left;
+            margin-top: 2rem;
+            padding-left: 1rem;
+        }
+        .steps li {
+            margin-bottom: 0.75rem;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>注册成功</h1>
-    <p>感谢您的注册！我们已经向您的邮箱发送了一封验证邮件，请查收并按照邮件中的指示完成验证。</p>
-    <p>如果您已收到验证码，请点击 <a href="{% url 'users:verify_email' %}">这里</a> 输入验证码完成验证。</p>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="success-container">
+                    <i class="fas fa-check-circle success-icon"></i>
+                    <h2>注册申请已提交</h2>
+                    <p class="lead">感谢您申请成为AdWeb广告管理平台的广告主！</p>
+                    
+                    <div class="alert alert-info mt-4">
+                        <h5><i class="fas fa-info-circle"></i> 后续流程</h5>
+                        <p>您的注册申请已提交成功，需要等待管理员审核。审核结果将通过邮件通知，请注意查收。</p>
+                    </div>
+                    
+                    <div class="steps">
+                        <h5>审核流程：</h5>
+                        <ol>
+                            <li>管理员将在1-2个工作日内审核您的申请</li>
+                            <li>审核结果将发送至您注册时填写的邮箱</li>
+                            <li>审核通过后，您可以使用注册的邮箱和密码登录系统</li>
+                            <li>如有疑问，请联系平台客服</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'users:login' %}" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> 返回登录页
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

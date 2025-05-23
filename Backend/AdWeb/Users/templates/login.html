@@ -2,42 +2,170 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>用户登录</title>
+    <title>用户登录 - AdWeb广告管理平台</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        .login-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            padding: 2rem;
+            max-width: 450px;
+            width: 100%;
+        }
+        .tab-content {
+            padding-top: 1.5rem;
+        }
+        .nav-tabs {
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 1.5rem;
+        }
+        .nav-tabs .nav-link {
+            color: #6c757d;
+            font-weight: 500;
+            border: none;
+            padding: 0.75rem 1rem;
+            margin-right: 1rem;
+        }
+        .nav-tabs .nav-link.active {
+            color: #0d6efd;
+            font-weight: 600;
+            border-bottom: 2px solid #0d6efd;
+        }
+        .nav-tabs .nav-link i {
+            margin-right: 0.5rem;
+        }
+        .login-icon {
+            font-size: 3rem;
+            color: #0d6efd;
+            margin-bottom: 1rem;
+        }
+        .login-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="my-4">用户登录</h1>
-        <form method="post" action="{% url 'users:login' %}">
-            {% csrf_token %}
-            <input type="hidden" name="next" value="{{ next }}">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="login-container">
+                    <div class="login-title">
+                        <i class="fas fa-ad login-icon"></i>
+                        <h2>AdWeb广告管理平台</h2>
+                        <p class="text-muted">请选择您的登录方式</p>
+                    </div>
 
-            {% if form.non_field_errors %}
-            <div class="alert alert-danger">
-                {% for error in form.non_field_errors %}
-                {{ error }}
-                {% endfor %}
-            </div>
-            {% endif %}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
 
-            <div class="mb-3">
-                <label for="id_email" class="form-label">{{ form.email.label }}</label>
-                {{ form.email }}
-                {% if form.email.errors %}
-                <div class="text-danger">{{ form.email.errors.0 }}</div>
-                {% endif %}
+                    <ul class="nav nav-tabs" id="loginTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="advertiser-tab" data-bs-toggle="tab" data-bs-target="#advertiser" type="button" role="tab" aria-controls="advertiser" aria-selected="true">
+                                <i class="fas fa-user"></i> 广告主登录
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab" aria-controls="admin" aria-selected="false">
+                                <i class="fas fa-user-shield"></i> 管理员登录
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="loginTabsContent">
+                        <div class="tab-pane fade show active" id="advertiser" role="tabpanel" aria-labelledby="advertiser-tab">
+                            <form method="post" action="{% url 'users:login' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ next }}">
+                                <input type="hidden" name="user_type" value="advertiser">
+
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">
+                                        <i class="fas fa-envelope"></i> 邮箱
+                                    </label>
+                                    <input type="email" name="email" class="form-control" id="email" placeholder="请输入邮箱" required>
+                                    {% if form.email.errors %}
+                                    <div class="text-danger">{{ form.email.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">
+                                        <i class="fas fa-lock"></i> 密码
+                                    </label>
+                                    <input type="password" name="password" class="form-control" id="password" placeholder="请输入密码" required>
+                                    {% if form.password.errors %}
+                                    <div class="text-danger">{{ form.password.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-100 mb-3">
+                                    <i class="fas fa-sign-in-alt"></i> 广告主登录
+                                </button>
+
+                                <div class="text-center">
+                                    <small class="text-muted">还没有账号？</small>
+                                    <a href="{% url 'users:register' %}" class="text-decoration-none">申请注册广告主账号</a>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade" id="admin" role="tabpanel" aria-labelledby="admin-tab">
+                            <form method="post" action="{% url 'users:login' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ next }}">
+                                <input type="hidden" name="user_type" value="admin">
+
+                                <div class="mb-3">
+                                    <label for="admin-email" class="form-label">
+                                        <i class="fas fa-envelope"></i> 管理员邮箱
+                                    </label>
+                                    <input type="email" name="email" class="form-control" id="admin-email" placeholder="请输入管理员邮箱" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="admin-password" class="form-label">
+                                        <i class="fas fa-lock"></i> 管理员密码
+                                    </label>
+                                    <input type="password" name="password" class="form-control" id="admin-password" placeholder="请输入管理员密码" required>
+                                </div>
+
+                                <button type="submit" class="btn btn-danger w-100">
+                                    <i class="fas fa-user-shield"></i> 管理员登录
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="id_password" class="form-label">{{ form.password.label }}</label>
-                {{ form.password }}
-                {% if form.password.errors %}
-                <div class="text-danger">{{ form.password.errors.0 }}</div>
-                {% endif %}
-            </div>
-            <button type="submit" class="btn btn-primary">登录</button>
-        </form>
-        没有账号？<a href="{% url 'users:register' %}" class="btn btn-link">注册</a>
+        </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 保持选中的选项卡状态
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const userType = urlParams.get('user_type');
+            if (userType === 'admin') {
+                const adminTab = document.getElementById('admin-tab');
+                const tab = new bootstrap.Tab(adminTab);
+                tab.show();
+            }
+        });
+    </script>
 </body>
 </html>
