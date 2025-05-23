@@ -3,19 +3,36 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.utils import timezone
 # Create your models here.
 class User(AbstractUser):
+    USER_TYPE_CHOICES = (
+        ('admin', '管理员'),
+        ('advertiser', '广告主'),
+    )
+    
+    AUDIT_STATUS_CHOICES = (
+        ('pending', '待审核'),
+        ('approved', '已批准'),
+        ('rejected', '已拒绝'),
+    )
+
     groups = models.ManyToManyField(
         Group,
-        related_name="custom_user_groups",  # 添加 related_name
+        related_name="custom_user_groups",
         blank=True,
     )
     user_permissions = models.ManyToManyField(
         Permission,
-        related_name="custom_user_permissions",  # 添加 related_name
+        related_name="custom_user_permissions",
         blank=True,
     )
     email = models.EmailField(unique=True)
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     is_verified = models.BooleanField(default=False)
+    user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES, default='advertiser')
+    audit_status = models.CharField(max_length=20, choices=AUDIT_STATUS_CHOICES, default='pending')
+    register_ip = models.GenericIPAddressField(null=True, blank=True)
+    device_info = models.TextField(null=True, blank=True)
+    reject_reason = models.TextField(null=True, blank=True)
+    audit_time = models.DateTimeField(null=True, blank=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']

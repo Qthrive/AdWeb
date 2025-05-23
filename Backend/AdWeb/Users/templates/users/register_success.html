@@ -1,0 +1,27 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}注册成功 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h1 class="display-4 text-success mb-4">
+                        <i class="fas fa-check-circle"></i>
+                    </h1>
+                    <h2 class="card-title mb-4">注册申请已提交</h2>
+                    <p class="card-text">
+                        您的注册申请已成功提交，请等待管理员审核。<br>
+                        审核结果将通过邮件通知您，请注意查收。
+                    </p>
+                    <div class="mt-4">
+                        <a href="{% url 'users:login' %}" class="btn btn-primary">返回登录</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

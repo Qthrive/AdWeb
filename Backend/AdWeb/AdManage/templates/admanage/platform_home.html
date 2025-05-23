@@ -35,13 +35,13 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <!-- {% if 1 %} -->
+                    {% if user.is_staff %}
                     <div class="col-md-4 mb-3">
                         <a href="{% url 'adaudit:ad_list' %}" class="btn btn-warning w-100">
                             <i class="fas fa-check-circle"></i> 广告审核
                         </a>
                     </div>
-                    <!-- {% endif %} -->
+                    {% endif %}
                     <div class="col-md-{% if user.is_staff %}4{% else %}6{% endif %} mb-3">
                         <a href="{% url 'admanage:campaign_create' %}" class="btn btn-primary w-100">
                             <i class="fas fa-plus"></i> 创建广告活动

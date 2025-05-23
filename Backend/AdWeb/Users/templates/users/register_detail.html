@@ -1,0 +1,119 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}用户注册审核详情 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>用户注册审核详情</h2>
+        <div class="btn-group">
+            <a href="{% url 'users:register_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> 返回列表
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 用户信息 -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">用户信息</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>用户名</h6>
+                            <p>{{ user.username }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>邮箱</h6>
+                            <p>{{ user.email }}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6>注册时间</h6>
+                            <p>{{ user.date_joined|date:"Y-m-d H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>注册IP</h6>
+                            <p>{{ user.register_ip|default:"未知" }}</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <h6>设备信息</h6>
+                            <p>{{ user.device_info|default:"未知" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 审核操作 -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">审核操作</h5>
+                </div>
+                <div class="card-body">
+                    {% if user.audit_status == 'pending' %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="action" class="form-label">审核结果</label>
+                            <select class="form-select" id="action" name="action" required>
+                                <option value="">请选择</option>
+                                <option value="approve">通过</option>
+                                <option value="reject">拒绝</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">审核意见</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-check"></i> 提交审核
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="alert {% if user.audit_status == 'approved' %}alert-success{% else %}alert-danger{% endif %}">
+                        <h6>审核状态：{{ user.get_audit_status_display }}</h6>
+                        <p class="mb-1">审核时间：{{ user.audit_time|date:"Y-m-d H:i" }}</p>
+                        {% if user.reject_reason %}
+                        <p class="mb-0">拒绝原因：{{ user.reject_reason }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const actionSelect = document.getElementById('action');
+    const reasonTextarea = document.getElementById('reason');
+    const form = document.querySelector('form');
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            if (!actionSelect.value) {
+                e.preventDefault();
+                alert('请选择审核结果');
+                return;
+            }
+            if (!reasonTextarea.value.trim()) {
+                e.preventDefault();
+                alert('请填写审核意见');
+                return;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}
