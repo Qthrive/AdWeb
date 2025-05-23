@@ -9,7 +9,7 @@
     <div class="alert alert-warning alert-dismissible fade show" role="alert">
         <i class="fas fa-exclamation-triangle"></i>
         {% for n in notifications %}
-            <strong>{{ n.title }}</strong>：{{ n.content }}<br>
+            <strong>{{ n.title }}</strong>: {{ n.content }}<br>
         {% endfor %}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
@@ -115,16 +115,27 @@
                 </dd>
             </dl>
         </div>
-    </div>
-
+    </div>    
     <!-- 广告素材 -->
     <div class="card mb-4">
         <div class="card-header">
             <h5 class="card-title mb-0">广告素材</h5>
         </div>
-        <div class="card-body">
+        <div class="card-body">            
             {% if ad.image %}
-            <img src="{{ ad.image.url }}" alt="{{ ad.name }}" class="img-fluid">
+            <div class="text-center">
+                <div class="position-relative mb-3" style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; max-width: 1000px; margin: 0 auto;">
+                    <img src="{{ ad.image.url }}" 
+                         alt="{{ ad.name }}" 
+                         class="img-fluid rounded" 
+                         style="max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #ddd;">
+                    <div class="mt-3">
+                        <a href="{{ ad.image.url }}" class="btn btn-sm btn-outline-primary" target="_blank" title="在新窗口查看原始大小的图片">
+                            <i class="fas fa-external-link-alt"></i> 查看原图
+                        </a>
+                    </div>
+                </div>
+            </div>
             {% else %}
             <p class="text-muted">暂无素材</p>
             {% endif %}
@@ -140,9 +151,8 @@
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <div class="card bg-light">
-                        <div class="card-body text-center">
-                            <h6 class="card-title">展示次数</h6>
-                            <h3 class="mb-0">{{ ad.impressions|default:"0" }}</h3>
+                        <div class="card-body text-center">                            <h6 class="card-title">展示次数</h6>
+                            <h3 class="mb-0">{{ stats.impressions|default:"0" }}</h3>
                         </div>
                     </div>
                 </div>
@@ -150,7 +160,7 @@
                     <div class="card bg-light">
                         <div class="card-body text-center">
                             <h6 class="card-title">点击次数</h6>
-                            <h3 class="mb-0">{{ ad.clicks|default:"0" }}</h3>
+                            <h3 class="mb-0">{{ stats.clicks|default:"0" }}</h3>
                         </div>
                     </div>
                 </div>
@@ -158,7 +168,7 @@
                     <div class="card bg-light">
                         <div class="card-body text-center">
                             <h6 class="card-title">点击率</h6>
-                            <h3 class="mb-0">{{ ad.ctr|default:"0%" }}</h3>
+                            <h3 class="mb-0">{{ stats.ctr|default:"0%" }}</h3>
                         </div>
                     </div>
                 </div>
@@ -166,7 +176,7 @@
                     <div class="card bg-light">
                         <div class="card-body text-center">
                             <h6 class="card-title">平均点击成本</h6>
-                            <h3 class="mb-0">¥{{ ad.cpc|default:"0.00" }}</h3>
+                            <h3 class="mb-0">¥{{ stats.cpc|default:"0.00" }}</h3>
                         </div>
                     </div>
                 </div>
@@ -179,4 +189,4 @@
         </div>
     </div>
 </div>
-{% endblock %} 
+{% endblock %}

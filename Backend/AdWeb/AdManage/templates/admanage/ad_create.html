@@ -31,7 +31,7 @@
                             <option value="">请选择广告位</option>
                             {% for placement in ad_placements %}
                             <option value="{{ placement.id }}" data-price="{{ placement.price_per_day }}" data-type="{{ placement.placement_type }}" data-dimension="{{ placement.dimension }}">
-                                {{ placement.get_placement_type_display }} ({{ placement.dimension }} - ¥{{ placement.price_per_day }}/天)
+                                {{ placement.get_placement_type_display }} (¥{{ placement.price_per_day }}/天)
                             </option>
                             {% endfor %}
                         </select>
@@ -134,7 +134,6 @@
 
             const price = selectedOption.dataset.price;
             const placementType = selectedOption.dataset.type;
-            const dimension = selectedOption.dataset.dimension;
 
             // 设置默认预算（7天）
             if (price) {
@@ -148,11 +147,6 @@
             } else {
                 creativeContainer.style.display = 'block';
                 creativeInput.required = true;
-                if (dimension && dimension !== 'N/A') {
-                    creativeRequirements.textContent = `支持jpg、png格式，大小不超过2MB，尺寸需要为${dimension}`;
-                } else {
-                    creativeRequirements.textContent = '支持jpg、png格式，大小不超过2MB';
-                }
             }
         }
         
@@ -168,7 +162,7 @@
             form.classList.add('was-validated');
         });
 
-        // 图片预览和验证
+        // 图片验证（仅限制大小）
         creativeInput.addEventListener('change', function() {
             const file = this.files[0];
             if (!file) return;
@@ -177,22 +171,6 @@
                 alert('图片大小不能超过2MB');
                 this.value = '';
                 return;
-            }
-
-            const selectedOption = adPlacementSelect.options[adPlacementSelect.selectedIndex];
-            const dimension = selectedOption.dataset.dimension;
-            
-            // 如果不是文字广告且指定了尺寸，则验证图片尺寸
-            if (selectedOption.dataset.type !== 'text' && dimension && dimension !== 'N/A') {
-                const img = new Image();
-                img.onload = function() {
-                    const [width, height] = dimension.split('x').map(Number);
-                    if (img.width !== width || img.height !== height) {
-                        alert(`图片尺寸必须为 ${dimension}`);
-                        creativeInput.value = '';
-                    }
-                };
-                img.src = URL.createObjectURL(file);
             }
         });
     });

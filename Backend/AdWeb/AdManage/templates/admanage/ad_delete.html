@@ -24,12 +24,10 @@
                         <li>广告素材文件将被删除</li>
                         <li>广告投放将立即停止</li>
                     </ul>
-                </div>
-
-                <form method="post">
+                </div>                <form method="post">
                     {% csrf_token %}
                     <div class="d-flex justify-content-center gap-2">
-                        <a href="{% url 'admanage:ad_detail' campaign.id ad.id %}" class="btn btn-secondary">
+                        <a href="{% url 'admanage:campaign_detail' campaign.id %}" class="btn btn-secondary">
                             <i class="fas fa-times"></i> 取消
                         </a>
                         <button type="submit" class="btn btn-danger">

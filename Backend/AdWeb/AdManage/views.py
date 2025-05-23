@@ -152,17 +152,6 @@ def ad_create(request, campaign_id):
             # 获取广告位
             ad_placement = get_object_or_404(AdPlacement, id=ad_placement_id)
             
-            # 处理广告素材
-            file_path = None
-            if ad_placement.placement_type != 'text':  # 非文字广告才需要图片
-                creative = request.FILES.get('creative')
-                if not creative:
-                    raise ValueError('请上传广告素材')
-                
-                # 保存广告素材
-                file_name = f'ads/{campaign.id}/{timezone.now().strftime("%Y%m%d%H%M%S")}_{creative.name}'
-                file_path = default_storage.save(file_name, ContentFile(creative.read()))
-            
             # 创建广告
             ad = Ad.objects.create(
                 name=name,
@@ -175,18 +164,25 @@ def ad_create(request, campaign_id):
                 end_date=end_date,
                 target_url=target_url,
                 description=description,
-                image=file_path if file_path else None,  # 文字广告时 image 为 None
                 status='pending'  # 初始状态为待审核
             )
+
+            # 处理广告素材
+            if ad_placement.placement_type != 'text':  # 非文字广告才需要图片
+                creative = request.FILES.get('creative')
+                if not creative:
+                    ad.delete()  # 删除已创建的广告记录
+                    raise ValueError('请上传广告素材')
+                
+                # 素材直接赋值给image字段，让Django处理文件保存
+                ad.image = creative
+                ad.save()
             
             messages.success(request, '广告创建成功，等待审核')
             return redirect('admanage:campaign_detail', campaign_id=campaign.id)
             
         except Exception as e:
             messages.error(request, f'创建失败：{str(e)}')
-            # 如果保存失败且上传了文件，删除已上传的文件
-            if 'file_path' in locals() and file_path:
-                default_storage.delete(file_path)
     
     # 获取可用的广告位
     ad_placements = AdPlacement.objects.all()
@@ -204,23 +200,26 @@ def ad_detail(request, campaign_id, ad_id):
         campaign = Campaign.objects.get(id=campaign_id)
         ad = Ad.objects.get(id=ad_id, campaign=campaign)
         
-        # 计算广告统计数据
-        ad.impressions = ad.get_impressions()
-        ad.clicks = ad.get_clicks()
-        ad.ctr = ad.get_ctr()
-        ad.cpc = ad.get_cpc()
-        
         # 获取预算状态
         budget_status = PaymentService.get_ad_budget_status(ad)
 
         # 查询未读预算预警通知
         notifications = Notification.objects.filter(user=request.user, title__icontains=ad.name, status='unread')
         
+        # 获取统计数据
+        stats = {
+            'impressions': ad.get_impressions(),
+            'clicks': ad.get_clicks(),
+            'ctr': ad.get_ctr(),
+            'cpc': ad.get_cpc()
+        }
+        
         context = {
             'campaign': campaign,
             'ad': ad,
             'budget_status': budget_status,
             'notifications': notifications,
+            'stats': stats
         }
         return render(request, 'AdManage/ad_detail.html', context)
     except Campaign.DoesNotExist:
@@ -243,6 +242,7 @@ def ad_edit(request, campaign_id, ad_id):
                 name = request.POST.get('name')
                 ad_placement_id = request.POST.get('ad_placement')
                 budget = request.POST.get('budget')
+                daily_limit = request.POST.get('daily_limit')
                 start_date = request.POST.get('start_date')
                 end_date = request.POST.get('end_date')
                 target_url = request.POST.get('target_url')
@@ -256,23 +256,23 @@ def ad_edit(request, campaign_id, ad_id):
                 ad.name = name
                 ad.placement = ad_placement
                 ad.budget = budget
-                ad.start_date = start_date
-                ad.end_date = end_date
+                ad.daily_limit = daily_limit
                 ad.target_url = target_url
                 ad.description = description
                 ad.status = status
                 
+                # 处理时间
+                try:
+                    ad.start_date = timezone.make_aware(datetime.strptime(start_date, '%Y-%m-%d %H:%M'))
+                    ad.end_date = timezone.make_aware(datetime.strptime(end_date, '%Y-%m-%d %H:%M'))
+                except ValueError as e:
+                    raise ValueError('日期格式错误，请使用正确的日期格式')
+                
                 # 处理新的广告素材（如果有）
                 creative = request.FILES.get('creative')
                 if creative:
-                    # 删除旧的素材文件
-                    if ad.image:
-                        default_storage.delete(ad.image.path)
-                    
-                    # 保存新的素材文件
-                    file_name = f'ads/{campaign.id}/{timezone.now().strftime("%Y%m%d%H%M%S")}_{creative.name}'
-                    file_path = default_storage.save(file_name, ContentFile(creative.read()))
-                    ad.image = file_path
+                    # 保存新的素材文件，Django会自动处理旧文件的删除
+                    ad.image = creative
                 
                 ad.save()
                 messages.success(request, '广告更新成功！')
@@ -280,9 +280,6 @@ def ad_edit(request, campaign_id, ad_id):
                 
             except Exception as e:
                 messages.error(request, f'更新失败：{str(e)}')
-                # 如果保存失败且上传了新文件，删除新文件
-                if 'file_path' in locals():
-                    default_storage.delete(file_path)
         
         # 获取可用的广告位
         ad_placements = AdPlacement.objects.all()

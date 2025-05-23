@@ -15,7 +15,7 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card">
-            <div class="card-body">
+            <div class="card-body">                
                 <form method="post" class="needs-validation" novalidate>
                     {% csrf_token %}
                     
@@ -38,6 +38,21 @@
                             <button type="button" class="btn btn-outline-primary amount-btn" data-amount="500">¥500</button>
                             <button type="button" class="btn btn-outline-primary amount-btn" data-amount="1000">¥1000</button>
                             <button type="button" class="btn btn-outline-primary amount-btn" data-amount="2000">¥2000</button>
+                        </div>
+                    </div>                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">支付方式</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% for method_value, method_label in payment_methods %}
+                            <div class="form-check pe-4">
+                                <input class="form-check-input" type="radio" 
+                                       name="payment_method" id="{{ method_value }}" 
+                                       value="{{ method_value }}" 
+                                       {% if method_value == 'balance' %}checked{% endif %}>
+                                <label class="form-check-label" for="{{ method_value }}">
+                                    {{ method_label }}
+                                </label>
+                            </div>
+                            {% endfor %}
                         </div>
                     </div>
 
@@ -67,11 +82,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('form');
     const amountInput = document.getElementById('amount');
     const amountBtns = document.querySelectorAll('.amount-btn');
+    const paymentMethods = document.querySelectorAll('input[name="payment_method"]');
     
     // 快捷金额按钮点击事件
     amountBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             amountInput.value = this.dataset.amount;
+        });
+    });
+    
+    // 支付方式切换事件
+    paymentMethods.forEach(method => {
+        method.addEventListener('change', function() {
+            const methodAlert = document.getElementById('payment-method-info');
+            if (methodAlert) {
+                methodAlert.remove();
+            }
+            
+            const selectedLabel = document.querySelector(`label[for="${this.id}"]`).textContent.trim();
+            const alertHtml = `
+                <div id="payment-method-info" class="alert alert-info mt-3">
+                    <i class="fas fa-info-circle"></i> 您选择了${selectedLabel}支付方式，
+                    ${this.value === 'balance' ? 
+                    '充值金额将直接到账。' : 
+                    '系统将模拟支付流程（仅作演示）。'}
+                </div>
+            `;
+            
+            form.querySelector('.alert-info').insertAdjacentHTML('beforebegin', alertHtml);
         });
     });
     
@@ -85,5 +123,22 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+<style>
+.payment-method-card {
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.payment-method-card:hover {
+    border-color: #0d6efd;
+    background-color: #f8f9fa;
+}
+
+.form-check-input:checked + .form-check-label {
+    font-weight: bold;
+    color: #0d6efd;
+}
+</style>
 {% endblock %}
 {% endblock %}

@@ -6,7 +6,7 @@ from .models import InvoiceRequest, Transaction
 from Users.models import User, Notification
 from decimal import Decimal
 from django.utils import timezone
-import models
+from django.db import models
 
 @login_required
 def invoice_request(request):
@@ -89,29 +89,69 @@ def recharge(request):
     user = request.user
     if request.method == 'POST':
         amount = request.POST.get('amount')
+        payment_method = request.POST.get('payment_method', 'balance')
         description = request.POST.get('description', '')
+        
         try:
             amount = Decimal(amount)
         except Exception:
             messages.error(request, '请输入有效的充值金额。')
             return redirect('payment:recharge')
+        
         if amount <= 0:
             messages.error(request, '充值金额必须大于0。')
             return redirect('payment:recharge')
-        # 创建充值记录
-        tx = Transaction.objects.create(
-            user=user,
-            amount=amount,
-            transaction_type='recharge',
-            status='completed',
-            description=description
-        )
-        # 增加用户余额
-        user.balance = (user.balance or 0) + amount
-        user.save()
-        messages.success(request, f'充值成功，金额已到账。')
-        return redirect('payment:balance')
-    return render(request, 'Payment/recharge.html')
+
+        try:
+            # 创建充值交易记录
+            transaction = Transaction.objects.create(
+                user=user,
+                amount=amount,
+                description=description,
+                transaction_type='recharge',
+                payment_method=payment_method,
+                status='completed'  # 模拟情况下，所有支付都直接完成
+            )
+
+            # 根据支付方式处理
+            if payment_method == 'balance':
+                # 余额支付直接更新账户
+                user.balance = Decimal(user.balance or 0) + amount
+                user.save()
+                
+                messages.success(request, f'充值成功！已向您的账户充值 ¥{amount}')
+            else:
+                # 模拟其他支付方式
+                payment_method_display = dict(Transaction.PAYMENT_METHODS).get(payment_method)
+                
+                # 模拟支付成功
+                transaction.status = 'completed'
+                transaction.save()
+                
+                # 更新用户余额
+                user.balance = Decimal(user.balance or 0) + amount
+                user.save()
+                
+                messages.success(request, f'使用{payment_method_display}充值 ¥{amount} 成功！')                # 创建通知
+            Notification.objects.create(
+                user=user,
+                title='充值成功',
+                content=f'您已使用{transaction.get_payment_method_display()}成功充值 ¥{amount}，交易编号：{transaction.id}',
+                status='unread'
+            )
+            
+            return redirect('payment:balance')
+
+        except Exception as e:
+            messages.error(request, f'充值失败，请稍后重试。错误信息：{str(e)}')
+            return redirect('payment:recharge')
+
+    # 准备支付方式选项
+    payment_methods = Transaction.PAYMENT_METHODS
+    
+    return render(request, 'Payment/recharge.html', {
+        'payment_methods': payment_methods
+    })
 
 # 管理员权限判断
 

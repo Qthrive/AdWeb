@@ -16,12 +16,19 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
     path('users/', include('Users.urls', namespace='users')),
     path('adplace/', include('AdPlace.urls', namespace='adplace')),
+    path('payment/', include('Payment.urls', namespace='payment')),
     path('', include('AdManage.urls', namespace='admanage')), # 根路径指向 AdManage
     # path('admanage/', include('AdManage.urls', namespace='admanage')), # 移除这一行
     # path('', user_views.home, name='home'), # 移除原来的根路径指向
 ]
+
+# 在开发模式下才添加这个配置
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

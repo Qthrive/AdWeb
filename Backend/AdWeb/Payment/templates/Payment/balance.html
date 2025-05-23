@@ -58,18 +58,18 @@
                         <tbody>
                             {% for transaction in transactions %}
                             <tr>
-                                <td>{{ transaction.created_at|date:"Y-m-d H:i" }}</td>
-                                <td>
-                                    {% if transaction.type == 'recharge' %}
+                                <td>{{ transaction.created_at|date:"Y-m-d H:i" }}</td>                                <td>
+                                    {% if transaction.transaction_type == 'recharge' %}
                                     <span class="badge bg-success">充值</span>
-                                    {% else %}
+                                    {% elif transaction.transaction_type == 'ad_spend' %}
                                     <span class="badge bg-danger">消费</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">退款</span>
                                     {% endif %}
                                 </td>
-                                <td>¥{{ transaction.amount }}</td>
-                                <td>
-                                    {% if transaction.status == 'success' %}
-                                    <span class="badge bg-success">成功</span>
+                                <td>¥{{ transaction.amount }}</td><td>
+                                    {% if transaction.status == 'completed' %}
+                                    <span class="badge bg-success">已完成</span>
                                     {% elif transaction.status == 'pending' %}
                                     <span class="badge bg-warning">处理中</span>
                                     {% else %}
@@ -130,6 +130,7 @@
                 </nav>
                 {% endif %}
             </div>
+            <embed src="" type="application/" width="100%" height="600px" />
         </div>
     </div>
 </div>

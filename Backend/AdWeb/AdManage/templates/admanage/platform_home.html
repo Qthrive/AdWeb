@@ -34,20 +34,14 @@
                 <h5 class="card-title mb-0">快捷操作</h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
+                <div class="row">                    <div class="col-md-6 mb-3">
                         <a href="{% url 'admanage:campaign_create' %}" class="btn btn-primary w-100">
                             <i class="fas fa-plus"></i> 创建广告活动
                         </a>
                     </div>
-                    <div class="col-md-4 mb-3">
-                        <a href="#" class="btn btn-success w-100">
+                    <div class="col-md-6 mb-3">
+                        <a href="{% url 'payment:recharge' %}" class="btn btn-success w-100">
                             <i class="fas fa-wallet"></i> 账户充值
-                        </a>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <a href="#" class="btn btn-info w-100">
-                            <i class="fas fa-chart-line"></i> 数据报表
                         </a>
                     </div>
                 </div>

@@ -72,6 +72,89 @@ class Ad(models.Model):
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
 
+    def get_impressions(self, start_date=None, end_date=None):
+        """获取广告展示次数"""
+        impressions = self.impressions.all()
+        if start_date:
+            impressions = impressions.filter(timestamp__date__gte=start_date)
+        if end_date:
+            impressions = impressions.filter(timestamp__date__lte=end_date)
+        return impressions.count()
+
+    def get_clicks(self, start_date=None, end_date=None):
+        """获取广告点击次数"""
+        clicks = self.clicks.all()
+        if start_date:
+            clicks = clicks.filter(timestamp__date__gte=start_date)
+        if end_date:
+            clicks = clicks.filter(timestamp__date__lte=end_date)
+        return clicks.count()
+
+    def get_ctr(self, start_date=None, end_date=None):
+        """获取点击率 (Click Through Rate)"""
+        impressions = self.get_impressions(start_date, end_date)
+        clicks = self.get_clicks(start_date, end_date)
+        return f"{(clicks / impressions * 100 if impressions > 0 else 0):.2f}%"
+
+    def get_cost(self, start_date=None, end_date=None):
+        """获取广告花费"""
+        from django.db.models import Sum
+        
+        # 从展示记录中获取花费
+        impressions = self.impressions.all()
+        if start_date:
+            impressions = impressions.filter(timestamp__date__gte=start_date)
+        if end_date:
+            impressions = impressions.filter(timestamp__date__lte=end_date)
+        imp_cost = impressions.aggregate(total=Sum('cost'))['total'] or 0
+
+        # 从点击记录中获取花费
+        clicks = self.clicks.all()
+        if start_date:
+            clicks = clicks.filter(timestamp__date__gte=start_date)
+        if end_date:
+            clicks = clicks.filter(timestamp__date__lte=end_date)
+        click_cost = clicks.aggregate(total=Sum('cost'))['total'] or 0
+
+        return imp_cost + click_cost
+    
+    def get_cpc(self, start_date=None, end_date=None):
+        """获取平均点击成本 (Cost Per Click)"""
+        clicks = self.get_clicks(start_date, end_date)
+        cost = self.get_cost(start_date, end_date)
+        return f"{(float(cost) / clicks if clicks > 0 else 0):.2f}"
+
+    def get_daily_stats(self, date):
+        """获取指定日期的统计数据"""
+        from DataShow.models import DailyStats
+        try:
+            stats = DailyStats.objects.get(ad=self, date=date)
+            return {
+                'impressions': stats.impressions,
+                'clicks': stats.clicks,
+                'cost': stats.cost,
+                'ctr': f"{(stats.clicks / stats.impressions * 100 if stats.impressions > 0 else 0):.2f}",
+                'cpc': f"{(float(stats.cost) / stats.clicks if stats.clicks > 0 else 0):.2f}"
+            }
+        except DailyStats.DoesNotExist:
+            return {
+                'impressions': 0,
+                'clicks': 0,
+                'cost': 0,
+                'ctr': '0.00%',
+                'cpc': '0.00'
+            }
+
+    def get_stats(self, start_date=None, end_date=None):
+        """获取指定时间范围的统计数据"""
+        return {
+            'impressions': self.get_impressions(start_date, end_date),
+            'clicks': self.get_clicks(start_date, end_date),
+            'cost': self.get_cost(start_date, end_date),
+            'ctr': self.get_ctr(start_date, end_date),
+            'cpc': self.get_cpc(start_date, end_date)
+        }
+
 class AdPlacement(models.Model):
     PLACEMENT_CHOICES = [
         ('banner','横幅广告'),

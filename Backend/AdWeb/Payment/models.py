@@ -15,9 +15,18 @@ class Transaction(models.Model):
         ('failed', '失败')
     ]
 
+    PAYMENT_METHODS = [
+        ('balance', '余额支付'),
+        ('alipay', '支付宝'),
+        ('wechat', '微信支付'),
+        ('bank', '银行转账')
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transactions')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default='balance')
+    description = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     ad = models.ForeignKey(Ad, on_delete=models.SET_NULL, null=True, blank=True, related_name='transactions')
     created_at = models.DateTimeField(auto_now_add=True)

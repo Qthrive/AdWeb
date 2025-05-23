@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-f^gai@wv71i78we%tmqk59qw$1^j5msno3$3z50z@@#sp!)vm^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 AUTH_USER_MODEL = 'Users.User'
 
@@ -135,20 +135,11 @@ USE_TZ = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.126.com'
-EMAIL_PORT = 465
-EMAIL_HOST_USER = 'qthrive@126.com'
-EMAIL_HOST_PASSWORD = 'EZNVNnJmjG9tSbzf'
-EMAIL_USE_SSL = True
-EMAIL_USE_TLS = False
+# Media files (User uploaded files)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
-AUTHENTICATION_BACKENDS = [
-    'Users.backends.EmailBackend',  # 自定义的 EmailBackend
-    'django.contrib.auth.backends.ModelBackend',  # 默认的认证后端
-]
-
-# 静态文件的 URL 前缀
+# Static files
 STATIC_URL = '/static/'
 # 静态文件收集的目标目录
 STATIC_ROOT = BASE_DIR / "staticfiles"
@@ -163,3 +154,16 @@ LOGOUT_REDIRECT_URL = '/users/login/'  # 登出后重定向的 URL
 
 # SESSION_ENGINE = 'django.contrib.sessions.backends.file'
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.126.com'
+EMAIL_PORT = 465
+EMAIL_HOST_USER = 'qthrive@126.com'
+EMAIL_HOST_PASSWORD = 'EZNVNnJmjG9tSbzf'
+EMAIL_USE_SSL = True
+EMAIL_USE_TLS = False
+
+AUTHENTICATION_BACKENDS = [
+    'Users.backends.EmailBackend',  # 自定义的 EmailBackend
+    'django.contrib.auth.backends.ModelBackend',  # 默认的认证后端
+]

@@ -2,6 +2,10 @@
 
 {% block title %}编辑广告 - AdWeb广告管理平台{% endblock %}
 
+{% block extra_css %}
+<link href="https://cdn.bootcdn.net/ajax/libs/flatpickr/4.6.13/flatpickr.min.css" rel="stylesheet">
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>编辑广告</h2>
@@ -12,14 +16,16 @@
 
 <div class="card">
     <div class="card-body">
-        <form method="post" enctype="multipart/form-data" id="adEditForm">
+        <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
             {% csrf_token %}
             
             <!-- 广告名称 -->
             <div class="mb-3">
                 <label for="name" class="form-label">广告名称</label>
                 <input type="text" class="form-control" id="name" name="name" value="{{ ad.name }}" required>
-                <div class="invalid-feedback">请输入广告名称</div>
+                <div class="invalid-feedback">
+                    请输入广告名称
+                </div>
             </div>
 
             <!-- 广告位选择 -->
@@ -28,30 +34,53 @@
                 <select class="form-select" id="ad_placement" name="ad_placement" required>
                     <option value="">请选择广告位</option>
                     {% for placement in ad_placements %}
-                        <option value="{{ placement.id }}" 
-                                data-price="{{ placement.price }}"
-                                {% if placement.id == ad.ad_placement.id %}selected{% endif %}>
-                            {{ placement.name }} (¥{{ placement.price }}/天)
-                        </option>
+                    <option value="{{ placement.id }}" 
+                            data-price="{{ placement.price_per_day }}" 
+                            data-type="{{ placement.placement_type }}" 
+                            data-dimension="{{ placement.dimension }}"
+                            {% if placement.id == ad.placement.id %}selected{% endif %}>
+                        {{ placement.get_placement_type_display }} (¥{{ placement.price_per_day }}/天)
+                    </option>
                     {% endfor %}
                 </select>
-                <div class="invalid-feedback">请选择广告位</div>
+                <div class="invalid-feedback">
+                    请选择广告位
+                </div>
             </div>
 
             <!-- 预算设置 -->
             <div class="mb-3">
-                <label for="budget" class="form-label">预算 (¥)</label>
+                <label for="budget" class="form-label">预算（元）</label>
                 <input type="number" class="form-control" id="budget" name="budget" 
                        value="{{ ad.budget }}" min="0" step="0.01" required>
-                <div class="invalid-feedback">请输入有效的预算金额</div>
+                <div class="invalid-feedback">
+                    请输入有效的预算金额
+                </div>
+            </div>
+
+            <!-- 每日限额 -->
+            <div class="mb-3">
+                <label for="daily_limit" class="form-label">每日限额（元）</label>
+                <input type="number" class="form-control" id="daily_limit" name="daily_limit" 
+                       value="{{ ad.daily_limit }}" min="0" step="0.01" required>
+                <div class="invalid-feedback">
+                    请输入有效的每日限额
+                </div>
             </div>
 
             <!-- 广告素材 -->
-            <div class="mb-3">
+            <div class="mb-3" id="creative_container">
                 <label for="creative" class="form-label">广告素材</label>
                 <input type="file" class="form-control" id="creative" name="creative" accept="image/*">
-                <div class="form-text">当前素材：<a href="{{ ad.creative_url }}" target="_blank">查看</a></div>
-                <div class="invalid-feedback">请上传广告素材</div>
+                <div class="form-text" id="creative_requirements">
+                    支持jpg、png格式，大小不超过2MB
+                    {% if ad.image %}
+                    <br>当前素材：<a href="{{ ad.image.url }}" target="_blank">查看</a>
+                    {% endif %}
+                </div>
+                <div class="invalid-feedback">
+                    请上传广告素材
+                </div>
             </div>
 
             <!-- 目标链接 -->
@@ -59,22 +88,29 @@
                 <label for="target_url" class="form-label">目标链接</label>
                 <input type="url" class="form-control" id="target_url" name="target_url" 
                        value="{{ ad.target_url }}" required>
-                <div class="invalid-feedback">请输入有效的目标链接</div>
+                <div class="invalid-feedback">
+                    请输入有效的目标链接
+                </div>
             </div>
 
             <!-- 投放时间 -->
-            <div class="row mb-3">
-                <div class="col-md-6">
+            <div class="row">
+                <div class="col-md-6 mb-3">
                     <label for="start_date" class="form-label">开始时间</label>
-                    <input type="datetime-local" class="form-control" id="start_date" name="start_date" 
-                           value="{{ ad.start_date|date:'Y-m-d\TH:i' }}" required>
-                    <div class="invalid-feedback">请选择开始时间</div>
+                    <input type="text" class="form-control datepicker" id="start_date" name="start_date" 
+                           value="{{ ad.start_date|date:'Y-m-d H:i' }}" required>
+                    <div class="invalid-feedback">
+                        请选择开始时间
+                    </div>
                 </div>
-                <div class="col-md-6">
+
+                <div class="col-md-6 mb-3">
                     <label for="end_date" class="form-label">结束时间</label>
-                    <input type="datetime-local" class="form-control" id="end_date" name="end_date" 
-                           value="{{ ad.end_date|date:'Y-m-d\TH:i' }}" required>
-                    <div class="invalid-feedback">请选择结束时间</div>
+                    <input type="text" class="form-control datepicker" id="end_date" name="end_date" 
+                           value="{{ ad.end_date|date:'Y-m-d H:i' }}" required>
+                    <div class="invalid-feedback">
+                        请选择结束时间
+                    </div>
                 </div>
             </div>
 
@@ -100,25 +136,23 @@
         </form>
     </div>
 </div>
+{% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.bootcdn.net/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/flatpickr/4.6.13/l10n/zh.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化日期时间选择器
-    flatpickr("#start_date", {
+    flatpickr(".datepicker", {
         enableTime: true,
         dateFormat: "Y-m-d H:i",
-        minDate: "today"
-    });
-    
-    flatpickr("#end_date", {
-        enableTime: true,
-        dateFormat: "Y-m-d H:i",
-        minDate: "today"
+        minDate: "today",
+        locale: "zh"
     });
 
     // 表单验证
-    const form = document.getElementById('adEditForm');
+    const form = document.querySelector('.needs-validation');
     form.addEventListener('submit', function(event) {
         if (!form.checkValidity()) {
             event.preventDefault();
@@ -127,19 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
         form.classList.add('was-validated');
     });
 
-    // 广告位价格联动
-    const adPlacementSelect = document.getElementById('ad_placement');
-    const budgetInput = document.getElementById('budget');
-    
-    adPlacementSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const price = selectedOption.dataset.price;
-        if (price) {
-            budgetInput.value = price;
-        }
-    });
-
-    // 图片预览
+    // 图片验证
     const creativeInput = document.getElementById('creative');
     creativeInput.addEventListener('change', function() {
         const file = this.files[0];
@@ -165,4 +187,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-{% endblock %} 
