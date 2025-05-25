@@ -1,73 +1,234 @@
 {% extends 'AdManage/base.html' %}
+{% load static %}
 
 {% block title %}发票审核 - AdWeb广告管理平台{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>发票审核</h2>
-    <a href="{% url 'payment:invoice_admin_list' %}" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left"></i> 返回列表
-    </a>
-</div>
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="card-title mb-0">申请信息</h5>
-    </div>
-    <div class="card-body">
-        <dl class="row">
-            <dt class="col-sm-3">申请人</dt>
-            <dd class="col-sm-9">{{ invoice.user.username }}</dd>
-            <dt class="col-sm-3">金额</dt>
-            <dd class="col-sm-9">¥{{ invoice.amount }}</dd>
-            <dt class="col-sm-3">发票抬头</dt>
-            <dd class="col-sm-9">{{ invoice.company_name }}</dd>
-            <dt class="col-sm-3">税号</dt>
-            <dd class="col-sm-9">{{ invoice.tax_number }}</dd>
-            <dt class="col-sm-3">申请时间</dt>
-            <dd class="col-sm-9">{{ invoice.request_date|date:"Y-m-d H:i" }}</dd>
-            <dt class="col-sm-3">备注</dt>
-            <dd class="col-sm-9">{{ invoice.notes|default:"-" }}</dd>
-            <dt class="col-sm-3">当前状态</dt>
-            <dd class="col-sm-9">
-                {% if invoice.status == 'pending' %}
-                <span class="badge bg-warning">待处理</span>
-                {% elif invoice.status == 'approved' %}
-                <span class="badge bg-success">已批准</span>
-                {% elif invoice.status == 'issued' %}
-                <span class="badge bg-primary">已开具</span>
-                {% else %}
-                <span class="badge bg-danger">已拒绝</span>
-                {% endif %}
-            </dd>
-        </dl>
-    </div>
-</div>
-{% if invoice.status == 'pending' %}
-<div class="card">
-    <div class="card-header">
-        <h5 class="card-title mb-0">审核操作</h5>
-    </div>
-    <div class="card-body">
-        <form method="post">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="notes" class="form-label">处理备注（可选）</label>
-                <textarea class="form-control" id="notes" name="notes" rows="2"></textarea>
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">发票审核</h6>
+                    <a href="{% url 'payment:invoice_admin_list' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> 返回发票列表
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header pb-0">
+                                    <h6 class="mb-0">基本信息</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-borderless">
+                                            <tbody>
+                                                <tr>
+                                                    <th class="text-secondary text-xs font-weight-bolder" style="width: 30%">申请用户</th>
+                                                    <td>{{ invoice.user.username }} ({{ invoice.user.email }})</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="text-secondary text-xs font-weight-bolder">发票金额</th>
+                                                    <td>¥ {{ invoice.amount }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="text-secondary text-xs font-weight-bolder">发票类型</th>
+                                                    <td>{% if invoice.invoice_type == 'personal' %}个人{% else %}企业{% endif %}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="text-secondary text-xs font-weight-bolder">发票抬头</th>
+                                                    <td>{{ invoice.info.title }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="text-secondary text-xs font-weight-bolder">税号</th>
+                                                    <td>{{ invoice.info.tax_number }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="text-secondary text-xs font-weight-bolder">申请时间</th>
+                                                    <td>{{ invoice.created_at|date:"Y-m-d H:i:s" }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="text-secondary text-xs font-weight-bolder">状态</th>
+                                                    <td>
+                                                        {% if invoice.status == 'pending' %}
+                                                            <span class="badge bg-warning">待审核</span>
+                                                        {% elif invoice.status == 'approved' %}
+                                                            <span class="badge bg-info">已批准</span>
+                                                        {% elif invoice.status == 'completed' %}
+                                                            <span class="badge bg-success">已完成</span>
+                                                        {% elif invoice.status == 'rejected' %}
+                                                            <span class="badge bg-danger">已拒绝</span>
+                                                        {% elif invoice.status == 'cancelled' %}
+                                                            <span class="badge bg-secondary">已取消</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header pb-0">
+                                    <h6 class="mb-0">收件信息</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-borderless">
+                                            <tbody>
+                                                <tr>
+                                                    <th class="text-secondary text-xs font-weight-bolder" style="width: 30%">收件邮箱</th>
+                                                    <td>{{ invoice.email }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="text-secondary text-xs font-weight-bolder">收件地址</th>
+                                                    <td>{{ invoice.address }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="text-secondary text-xs font-weight-bolder">联系人</th>
+                                                    <td>{{ invoice.contact_name }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="text-secondary text-xs font-weight-bolder">联系电话</th>
+                                                    <td>{{ invoice.contact_phone }}</td>
+                                                </tr>
+                                                {% if invoice.status == 'completed' %}
+                                                <tr>
+                                                    <th class="text-secondary text-xs font-weight-bolder">快递单号</th>
+                                                    <td>{{ invoice.tracking_number }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <th class="text-secondary text-xs font-weight-bolder">完成时间</th>
+                                                    <td>{{ invoice.completed_at|date:"Y-m-d H:i:s" }}</td>
+                                                </tr>
+                                                {% endif %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header pb-0">
+                                    <h6 class="mb-0">关联交易记录</h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if items %}
+                                    <div class="table-responsive">
+                                        <table class="table align-items-center mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">交易ID</th>
+                                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">类型</th>
+                                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">金额</th>
+                                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">时间</th>
+                                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">描述</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for item in items %}
+                                                <tr>
+                                                    <td>
+                                                        <p class="text-xs font-weight-bold mb-0 ps-3">{{ item.transaction.id }}</p>
+                                                    </td>
+                                                    <td>
+                                                        <p class="text-xs font-weight-bold mb-0 ps-3">{{ item.transaction.get_transaction_type_display }}</p>
+                                                    </td>
+                                                    <td>
+                                                        <p class="text-xs font-weight-bold mb-0 ps-3">¥ {{ item.transaction.amount }}</p>
+                                                    </td>
+                                                    <td>
+                                                        <p class="text-xs font-weight-bold mb-0 ps-3">{{ item.transaction.created_at|date:"Y-m-d H:i:s" }}</p>
+                                                    </td>
+                                                    <td>
+                                                        <p class="text-xs font-weight-bold mb-0 ps-3">{{ item.transaction.description }}</p>
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center py-3">
+                                        <p class="text-secondary mb-0">没有关联的交易记录</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if invoice.status == 'pending' %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header pb-0">
+                                    <h6 class="mb-0">审核操作</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post" action="{% url 'payment:invoice_admin_review' invoice.id %}">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label for="remarks" class="form-label">备注</label>
+                                            <textarea class="form-control" id="remarks" name="remarks" rows="3"></textarea>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-end">
+                                            <button type="submit" name="action" value="reject" class="btn btn-danger me-2">
+                                                <i class="fas fa-times me-1"></i> 拒绝申请
+                                            </button>
+                                            <button type="submit" name="action" value="approve" class="btn btn-success">
+                                                <i class="fas fa-check me-1"></i> 批准申请
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% elif invoice.status == 'approved' %}
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header pb-0">
+                                    <h6 class="mb-0">完成发票</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post" action="{% url 'payment:invoice_admin_review' invoice.id %}">
+                                        {% csrf_token %}
+                                        <div class="mb-3">
+                                            <label for="tracking_number" class="form-label">快递单号</label>
+                                            <input type="text" class="form-control" id="tracking_number" name="tracking_number" required>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="remarks" class="form-label">备注</label>
+                                            <textarea class="form-control" id="remarks" name="remarks" rows="3"></textarea>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-end">
+                                            <button type="submit" name="action" value="complete" class="btn btn-primary">
+                                                <i class="fas fa-check-circle me-1"></i> 标记为已完成
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
-            <div class="d-flex gap-2">
-                <button type="submit" name="action" value="approve" class="btn btn-success">
-                    <i class="fas fa-check"></i> 批准
-                </button>
-                <button type="submit" name="action" value="reject" class="btn btn-danger">
-                    <i class="fas fa-times"></i> 拒绝
-                </button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
-{% else %}
-<div class="alert alert-info">
-    <i class="fas fa-info-circle"></i> 该申请已处理，无需再次操作。
-</div>
-{% endif %}
 {% endblock %} 

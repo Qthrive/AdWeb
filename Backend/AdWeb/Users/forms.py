@@ -36,12 +36,13 @@ class RegistrationForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ['email', 'username', 'password1', 'password2']
+        fields = ['email', 'username', 'password1', 'password2', 'phone']
         labels = {
             'email': '邮箱',
             'username': '用户名',
             'password1': '密码',
             'password2': '确认密码',
+            'phone': '手机号',
         }
 
     def clean_email(self):
@@ -131,20 +132,55 @@ class CustomPasswordResetForm(DjangoPasswordResetForm):
         return super().save(domain_override, subject_template_name, email_template_name, use_https,
                             token_generator, from_email, html_email_template_name, extra_email_context)
     
-# 修改个人资料表单 (仅修改用户名)
+# 修改个人资料表单
 class ProfileForm(forms.ModelForm):
     username = forms.CharField(
         label='用户名',
         max_length=150,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入用户名'}),
     )
-
+    
+    email = forms.EmailField(
+        label='邮箱',
+        required=False,
+        disabled=True,
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
+    )
+    
+    phone = forms.CharField(
+        label='手机号码',
+        max_length=11,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入手机号码'}),
+    )
+    
+    company = forms.CharField(
+        label='公司名称',
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入公司名称'}),
+    )
+    
+    job_title = forms.CharField(
+        label='职位',
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入您的职位'}),
+    )
+    
+    bio = forms.CharField(
+        label='个人简介',
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control', 
+            'placeholder': '请简要介绍自己或您的公司/团队', 
+            'rows': '4'
+        }),
+    )
+    
     class Meta:
         model = User
-        fields = ('username',)  # 只包含 username 字段
-        widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入用户名'}),
-        }
+        fields = ['username', 'email', 'phone', 'company', 'job_title', 'bio']
 
     def clean_username(self):
         username = self.cleaned_data.get('username')

@@ -15,4 +15,8 @@ urlpatterns = [
     path('campaign/<int:campaign_id>/ad/<int:ad_id>/edit/', views.ad_edit, name='ad_edit'),
     path('campaign/<int:campaign_id>/ad/<int:ad_id>/delete/', views.ad_delete, name='ad_delete'),
     path('campaign/<int:campaign_id>/ad/<int:ad_id>/stats/', views.ad_stats, name='ad_stats'),
+    path('test-media/', views.test_media_access, name='test_media_access'),
+    path('ad-image/<int:ad_id>/', views.serve_ad_image, name='serve_ad_image'),
+    path('fix-all-images/', views.fix_all_images, name='fix_all_images'),
+    path('test-image-upload/', views.test_image_upload, name='test_image_upload'),
 ]

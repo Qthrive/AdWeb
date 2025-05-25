@@ -36,8 +36,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'adplace:placement_list' %}">
-                            <i class="fas fa-th-large"></i> 广告位管理
+                        <a class="nav-link" href="{% url 'payment:invoice_admin_list' %}">
+                            <i class="fas fa-file-invoice"></i> 发票审核
                         </a>
                     </li>
                     {% else %}
@@ -53,13 +53,13 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'adplace:placement_list' %}">
-                            <i class="fas fa-th-large"></i> 广告位列表
+                        <a class="nav-link" href="{% url 'payment:recharge' %}">
+                            <i class="fas fa-wallet"></i> 账户充值
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'payment:recharge' %}">
-                            <i class="fas fa-wallet"></i> 账户充值
+                        <a class="nav-link" href="{% url 'payment:invoice' %}">
+                            <i class="fas fa-file-invoice"></i> 发票管理
                         </a>
                     </li>
                     {% endif %}

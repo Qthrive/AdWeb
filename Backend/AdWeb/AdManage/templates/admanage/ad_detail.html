@@ -121,23 +121,31 @@
         <div class="card-header">
             <h5 class="card-title mb-0">广告素材</h5>
         </div>
-        <div class="card-body">            
+        <div class="card-body">
             {% if ad.image %}
             <div class="text-center">
                 <div class="position-relative mb-3" style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; max-width: 1000px; margin: 0 auto;">
-                    <img src="{{ ad.image.url }}" 
+                    <!-- 使用静态文件路径显示图片 -->
+                    <img id="adImage" 
+                         src="/static/images/test-{{ ad.image.name|cut:'ads/images/' }}"
                          alt="{{ ad.name }}" 
                          class="img-fluid rounded" 
-                         style="max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #ddd;">
+                         style="max-width: 100%; max-height: 400px; object-fit: contain; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #ddd;"
+                         onerror="handleImageError(this)">
+                    
+                    <!-- 简化的图片访问选项 -->
                     <div class="mt-3">
-                        <a href="{{ ad.image.url }}" class="btn btn-sm btn-outline-primary" target="_blank" title="在新窗口查看原始大小的图片">
+                        <a href="{% url 'admanage:serve_ad_image' ad_id=ad.id %}" class="btn btn-sm btn-outline-primary" target="_blank">
                             <i class="fas fa-external-link-alt"></i> 查看原图
                         </a>
                     </div>
                 </div>
             </div>
             {% else %}
-            <p class="text-muted">暂无素材</p>
+            <div class="text-center py-5">
+                <i class="fas fa-image text-muted" style="font-size: 4rem;"></i>
+                <p class="text-muted mt-3">暂无广告素材</p>
+            </div>
             {% endif %}
         </div>
     </div>
@@ -151,7 +159,8 @@
             <div class="row">
                 <div class="col-md-3 mb-3">
                     <div class="card bg-light">
-                        <div class="card-body text-center">                            <h6 class="card-title">展示次数</h6>
+                        <div class="card-body text-center">
+                            <h6 class="card-title">展示次数</h6>
                             <h3 class="mb-0">{{ stats.impressions|default:"0" }}</h3>
                         </div>
                     </div>
@@ -189,4 +198,21 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// 页面加载完成后执行
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('页面已加载，使用静态文件路径显示图片');
+});
+
+// 处理图片加载错误
+function handleImageError(imgElement) {
+    console.error('图片加载错误:', imgElement.src);
+    imgElement.onerror = null; // 防止无限循环
+    imgElement.src = '/static/images/image-placeholder.png';
+    imgElement.alt = '图片加载失败';
+}
+</script>
 {% endblock %}

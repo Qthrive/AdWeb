@@ -1,0 +1,226 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}测试图片上传 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">图片上传测试工具</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <p>这个页面用于测试图片上传功能。它会使用三种不同的方法来上传图片，并显示每种方法的结果。</p>
+                        <ol>
+                            <li>使用Django的默认存储保存到media/test/目录</li>
+                            <li>使用ImageField保存到media/ads/images/目录</li>
+                            <li>直接使用Python的文件操作保存到media/test_manual/目录</li>
+                        </ol>
+                    </div>
+                    
+                    <form method="post" enctype="multipart/form-data" class="mb-4">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="test_image" class="form-label">选择图片文件</label>
+                            <input type="file" class="form-control" id="test_image" name="test_image" accept="image/*" required>
+                            <div class="form-text">支持JPG、PNG和GIF格式，大小不超过2MB</div>
+                        </div>
+                        
+                        <div id="image_preview" class="mt-3 d-none">
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-subtitle mb-2 text-muted">图片预览</h6>
+                                    <img id="preview_img" src="#" alt="图片预览" class="img-fluid rounded" style="max-height: 200px;">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> 上传并测试
+                            </button>
+                        </div>
+                    </form>
+                    
+                    {% if uploaded %}
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">测试结果</h5>
+                        </div>
+                        <div class="card-body">
+                            <h6>上传信息</h6>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>原始文件名</th>
+                                    <td>{{ test_results.original_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>测试文件名</th>
+                                    <td>{{ test_results.test_filename }}</td>
+                                </tr>
+                                <tr>
+                                    <th>文件大小</th>
+                                    <td>{{ test_results.size }} 字节</td>
+                                </tr>
+                                <tr>
+                                    <th>内容类型</th>
+                                    <td>{{ test_results.content_type }}</td>
+                                </tr>
+                            </table>
+                            
+                            <h6 class="mt-4">方法1: 默认存储</h6>
+                            {% if test_results.method1.success %}
+                            <div class="alert alert-success">
+                                <p><i class="fas fa-check-circle"></i> 上传成功!</p>
+                            </div>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>保存路径</th>
+                                    <td>{{ test_results.method1.saved_path }}</td>
+                                </tr>
+                                <tr>
+                                    <th>完整路径</th>
+                                    <td>{{ test_results.method1.full_path }}</td>
+                                </tr>
+                                <tr>
+                                    <th>URL</th>
+                                    <td>
+                                        <a href="{{ test_results.method1.url }}" target="_blank">
+                                            {{ test_results.method1.url }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <div class="text-center mb-3">
+                                <img src="{{ test_results.method1.url }}" alt="方法1上传图片" class="img-thumbnail" style="max-height: 150px;">
+                            </div>
+                            {% else %}
+                            <div class="alert alert-danger">
+                                <p><i class="fas fa-times-circle"></i> 上传失败: {{ test_results.method1.error }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            <h6 class="mt-4">方法2: ImageField</h6>
+                            {% if test_results.method2.success %}
+                            <div class="alert alert-success">
+                                <p><i class="fas fa-check-circle"></i> 上传成功!</p>
+                            </div>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>广告ID</th>
+                                    <td>{{ test_results.method2.ad_id }}</td>
+                                </tr>
+                                <tr>
+                                    <th>图片名称</th>
+                                    <td>{{ test_results.method2.image_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>完整路径</th>
+                                    <td>{{ test_results.method2.full_path }}</td>
+                                </tr>
+                                <tr>
+                                    <th>URL</th>
+                                    <td>
+                                        <a href="{{ test_results.method2.url }}" target="_blank">
+                                            {{ test_results.method2.url }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>文件存在</th>
+                                    <td>{{ test_results.method2.exists|yesno:"是,否" }}</td>
+                                </tr>
+                            </table>
+                            <div class="text-center mb-3">
+                                <img src="{{ test_results.method2.url }}" alt="方法2上传图片" class="img-thumbnail" style="max-height: 150px;">
+                            </div>
+                            {% else %}
+                            <div class="alert alert-danger">
+                                <p><i class="fas fa-times-circle"></i> 上传失败: {{ test_results.method2.error }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            <h6 class="mt-4">方法3: 手动保存</h6>
+                            {% if test_results.method3.success %}
+                            <div class="alert alert-success">
+                                <p><i class="fas fa-check-circle"></i> 上传成功!</p>
+                            </div>
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th>完整路径</th>
+                                    <td>{{ test_results.method3.full_path }}</td>
+                                </tr>
+                                <tr>
+                                    <th>URL</th>
+                                    <td>
+                                        <a href="{{ test_results.method3.url }}" target="_blank">
+                                            {{ test_results.method3.url }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>文件存在</th>
+                                    <td>{{ test_results.method3.exists|yesno:"是,否" }}</td>
+                                </tr>
+                            </table>
+                            <div class="text-center mb-3">
+                                <img src="{{ test_results.method3.url }}" alt="方法3上传图片" class="img-thumbnail" style="max-height: 150px;">
+                            </div>
+                            {% else %}
+                            <div class="alert alert-danger">
+                                <p><i class="fas fa-times-circle"></i> 上传失败: {{ test_results.method3.error }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const imageInput = document.getElementById('test_image');
+    const imagePreview = document.getElementById('image_preview');
+    const previewImg = document.getElementById('preview_img');
+    
+    // 图片预览功能
+    imageInput.addEventListener('change', function () {
+        const file = this.files[0];
+        if (!file) {
+            imagePreview.classList.add('d-none');
+            return;
+        }
+        
+        // 验证文件类型
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!validTypes.includes(file.type)) {
+            alert('请选择JPG、PNG或GIF格式的图片');
+            this.value = '';
+            return;
+        }
+        
+        // 验证文件大小
+        if (file.size > 2 * 1024 * 1024) {
+            alert('图片大小不能超过2MB');
+            this.value = '';
+            return;
+        }
+        
+        // 显示预览
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            imagePreview.classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
+    });
+});
+</script>
+{% endblock %} 

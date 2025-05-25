@@ -177,19 +177,72 @@ def verify_email(request):
 
 @login_required
 def profile(request):
+    user = request.user
+    # 导入所有需要的模型
+    from AdManage.models import Campaign
+    from AdPlace.models import Ad
+    from Users.models import User
+    
     if request.method == 'POST':
-        print("POST 请求数据:", request.POST)  # 添加这行
-        form = ProfileForm(request.POST, instance=request.user)
+        form = ProfileForm(request.POST, instance=user)
         if form.is_valid():
-            print("表单验证通过:", form.cleaned_data)  # 添加这行
             form.save()
             messages.success(request, "个人资料已成功更新！")
             return redirect('users:profile')
-        else:
-            print("表单验证失败:", form.errors)  # 添加这行
     else:
-        form = ProfileForm(instance=request.user)
-    return render(request, 'profile.html', {'form': form})
+        # 初始化表单时设置邮箱字段的值
+        form = ProfileForm(instance=user, initial={'email': user.email})
+    
+    # 获取用户类型和状态的显示名称
+    # 判断用户类型：如果是staff则显示为管理员，否则使用user_type字段
+    if user.is_staff:
+        user_type_display = '管理员'
+    else:
+        user_type_display = dict(User.USER_TYPE_CHOICES).get(user.user_type, '未知')
+    
+    audit_status_display = dict(User.AUDIT_STATUS_CHOICES).get(user.audit_status, '未知')
+    
+    # 如果是管理员，显示系统统计数据
+    if user.is_staff:
+        # 系统用户统计
+        total_users = User.objects.filter(user_type='advertiser').count()
+        pending_users = User.objects.filter(user_type='advertiser', audit_status='pending').count()
+        
+        # 系统广告统计
+        campaign_count = Campaign.objects.all().count()
+        ad_count = Ad.objects.all().count()
+        
+        # 为模板添加额外的管理员统计数据
+        context = {
+            'form': form,
+            'user': user,
+            'user_type_display': user_type_display,
+            'total_users': total_users,
+            'pending_users': pending_users,
+            'campaign_count': campaign_count,
+            'ad_count': ad_count,
+            'register_time': user.date_joined,
+            'last_login': user.last_login,
+            'is_admin': True,
+        }
+    else:
+        # 普通用户显示个人广告统计
+        campaign_count = Campaign.objects.filter(advertiser=user).count()
+        ad_count = Ad.objects.filter(advertiser=user).count()
+        
+        context = {
+            'form': form,
+            'user': user,
+            'user_type_display': user_type_display,
+            'audit_status_display': audit_status_display,
+            'campaign_count': campaign_count,
+            'ad_count': ad_count,
+            'register_time': user.date_joined,
+            'last_login': user.last_login,
+            'is_admin': False,
+        }
+    
+    return render(request, 'users/profile.html', context)
 
 def test_email(request):
     send_mail(
@@ -209,13 +262,15 @@ def change_password(request):
         if form.is_valid():
             user = form.save()
             update_session_auth_hash(request, user)
-            auth_login(request, user)
+            messages.success(request, "密码已成功修改！")
+            return redirect('users:profile')
     else:
         form = CustomPasswordChangeForm(request.user)
-    return render(request, 'change_password.html', {'form': form})
+    return render(request, 'users/change_password.html', {'form': form})
 
 def registration_sent(request):
-    return render(request, 'registration_sent.html')  # 页面提示用户检查邮箱进行验证
+    """注册成功页面，提示用户等待审核"""
+    return render(request, 'registration_sent.html')  # 使用根目录下的模板
 
 def activation_success(request):
     return render(request, 'activation_success.html')  # 激活成功页面

@@ -82,6 +82,19 @@
                             <div class="text-danger">{{ form.username.errors.0 }}</div>
                             {% endif %}
                         </div>
+                        
+                        <!-- 手机号 -->
+                        <div class="mb-3">
+                            <label for="id_phone" class="form-label">
+                                <i class="fas fa-phone"></i> {{ form.phone.label }}
+                            </label>
+                            {{ form.phone|add_class:"form-control" }}
+                            {% if form.phone.errors %}
+                            <div class="text-danger">{{ form.phone.errors.0 }}</div>
+                            {% endif %}
+                            <small class="text-muted">请填写您的联系电话</small>
+                        </div>
+                        
                         <!-- 密码 -->
                         <div class="mb-3">
                             <label for="id_password1" class="form-label">

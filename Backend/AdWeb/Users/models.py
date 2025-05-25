@@ -45,6 +45,12 @@ class User(AbstractUser):
     register_ip = models.GenericIPAddressField(null=True, blank=True)
     device_info = models.TextField(null=True, blank=True)  # 设备信息
     reject_reason = models.TextField(null=True, blank=True)  # 拒绝原因
+    
+    # 扩展用户资料字段
+    phone = models.CharField(max_length=11, blank=True, null=True, verbose_name='手机号码')
+    company = models.CharField(max_length=100, blank=True, null=True, verbose_name='公司名称')
+    job_title = models.CharField(max_length=50, blank=True, null=True, verbose_name='职位')
+    bio = models.TextField(blank=True, null=True, verbose_name='个人简介')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']

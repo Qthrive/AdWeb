@@ -2,6 +2,35 @@
 
 {% block title %}编辑广告活动 - AdWeb广告管理平台{% endblock %}
 
+{% block extra_css %}
+<link href="https://cdn.bootcdn.net/ajax/libs/flatpickr/4.6.13/flatpickr.min.css" rel="stylesheet">
+<link href="https://cdn.bootcdn.net/ajax/libs/flatpickr/4.6.13/themes/material_blue.min.css" rel="stylesheet">
+<style>
+    .date-picker-wrapper {
+        position: relative;
+    }
+    .date-picker-wrapper .input-group-text {
+        cursor: pointer;
+        background-color: #f8f9fa;
+    }
+    .flatpickr-calendar {
+        box-shadow: 0 4px 20px 0px rgba(0, 0, 0, 0.14), 0 7px 10px -5px rgba(0, 0, 0, 0.1);
+        border-radius: 6px;
+    }
+    .date-range-info {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    .flatpickr-input {
+        background-color: #fff !important;
+    }
+    .flatpickr-calendar.open {
+        z-index: 9999 !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
@@ -37,27 +66,39 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="start_date" class="form-label">开始时间</label>
-                        <input type="datetime-local" class="form-control {% if form.start_date.errors %}is-invalid{% endif %}" 
-                               id="start_date" name="start_date" 
-                               value="{{ form.start_date.value|date:'Y-m-d\TH:i'|default:'' }}" required>
-                        {% if form.start_date.errors %}
-                            <div class="invalid-feedback">
-                                {{ form.start_date.errors.0 }}
+                        <label class="form-label">活动时间范围</label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="start_date" class="form-label">开始日期</label>
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control date-picker {% if form.start_date.errors %}is-invalid{% endif %}" 
+                                           id="start_date_picker" name="start_date_picker" placeholder="选择开始日期" required>
+                                    <span class="input-group-text" id="start-date-icon"><i class="fas fa-calendar-alt"></i></span>
+                                </div>
+                                {% if form.start_date.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.start_date.errors.0 }}
+                                    </div>
+                                {% endif %}
                             </div>
-                        {% endif %}
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="end_date" class="form-label">结束时间</label>
-                        <input type="datetime-local" class="form-control {% if form.end_date.errors %}is-invalid{% endif %}" 
-                               id="end_date" name="end_date" 
-                               value="{{ form.end_date.value|date:'Y-m-d\TH:i'|default:'' }}" required>
-                        {% if form.end_date.errors %}
-                            <div class="invalid-feedback">
-                                {{ form.end_date.errors.0 }}
+                            <div class="col-md-6">
+                                <label for="end_date" class="form-label">结束日期</label>
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control date-picker {% if form.end_date.errors %}is-invalid{% endif %}" 
+                                           id="end_date_picker" name="end_date_picker" placeholder="选择结束日期" required>
+                                    <span class="input-group-text" id="end-date-icon"><i class="fas fa-calendar-alt"></i></span>
+                                </div>
+                                {% if form.end_date.errors %}
+                                    <div class="invalid-feedback">
+                                        {{ form.end_date.errors.0 }}
+                                    </div>
+                                {% endif %}
                             </div>
-                        {% endif %}
+                        </div>
+                        <div class="date-range-info" id="date-range-info"></div>
+                        <!-- 隐藏的输入字段，用于表单提交 -->
+                        <input type="hidden" id="start_date" name="start_date" value="{{ form.start_date.value|date:'Y-m-d H:i'|default:'' }}">
+                        <input type="hidden" id="end_date" name="end_date" value="{{ form.end_date.value|date:'Y-m-d H:i'|default:'' }}">
                     </div>
 
                     <div class="mb-3">
@@ -88,23 +129,109 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.bootcdn.net/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+<script src="https://cdn.bootcdn.net/ajax/libs/flatpickr/4.6.13/l10n/zh.js"></script>
 <script>
-    // 初始化日期时间选择器
     document.addEventListener('DOMContentLoaded', function() {
-        // 设置最小日期为当前时间
-        const now = new Date();
-        const minDate = now.toISOString().slice(0, 16);
+        // 获取初始日期值
+        const startDateValue = document.getElementById('start_date').value;
+        const endDateValue = document.getElementById('end_date').value;
         
-        document.getElementById('start_date').min = minDate;
-        document.getElementById('end_date').min = minDate;
+        // 获取DOM元素
+        const startDateInput = document.getElementById('start_date_picker');
+        const endDateInput = document.getElementById('end_date_picker');
+        const startDateHidden = document.getElementById('start_date');
+        const endDateHidden = document.getElementById('end_date');
+        const dateRangeInfo = document.getElementById('date-range-info');
         
-        // 确保结束时间不早于开始时间
-        document.getElementById('start_date').addEventListener('change', function() {
-            document.getElementById('end_date').min = this.value;
+        // 初始化开始日期选择器
+        const startDatePicker = flatpickr(startDateInput, {
+            locale: "zh",
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            minDate: "today",
+            time_24hr: true,
+            disableMobile: true,
+            defaultDate: startDateValue ? new Date(startDateValue.replace(' ', 'T')) : null,
+            onChange: function(selectedDates, dateStr) {
+                if (selectedDates.length > 0) {
+                    // 设置隐藏字段的值
+                    startDateHidden.value = formatDate(selectedDates[0]);
+                    
+                    // 设置结束日期选择器的最小日期
+                    endDatePicker.set('minDate', selectedDates[0]);
+                    
+                    // 如果已经选择了结束日期，更新日期范围信息
+                    if (endDateHidden.value) {
+                        updateDateRangeInfo(selectedDates[0], new Date(endDateHidden.value));
+                    }
+                }
+            }
         });
+        
+        // 初始化结束日期选择器
+        const endDatePicker = flatpickr(endDateInput, {
+            locale: "zh",
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            minDate: startDateValue ? new Date(startDateValue.replace(' ', 'T')) : "today",
+            time_24hr: true,
+            disableMobile: true,
+            defaultDate: endDateValue ? new Date(endDateValue.replace(' ', 'T')) : null,
+            onChange: function(selectedDates, dateStr) {
+                if (selectedDates.length > 0) {
+                    // 设置隐藏字段的值
+                    endDateHidden.value = formatDate(selectedDates[0]);
+                    
+                    // 如果已经选择了开始日期，更新日期范围信息
+                    if (startDateHidden.value) {
+                        updateDateRangeInfo(new Date(startDateHidden.value), selectedDates[0]);
+                    }
+                }
+            }
+        });
+        
+        // 点击图标也可以打开日期选择器
+        document.getElementById('start-date-icon').addEventListener('click', function() {
+            startDatePicker.open();
+        });
+        
+        document.getElementById('end-date-icon').addEventListener('click', function() {
+            endDatePicker.open();
+        });
+        
+        // 如果有初始值，更新日期范围信息
+        if (startDateValue && endDateValue) {
+            updateDateRangeInfo(
+                new Date(startDateValue.replace(' ', 'T')),
+                new Date(endDateValue.replace(' ', 'T'))
+            );
+        }
+        
+        // 格式化日期为 "YYYY-MM-DD HH:MM" 格式
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            
+            return `${year}-${month}-${day} ${hours}:${minutes}`;
+        }
+        
+        // 更新日期范围信息
+        function updateDateRangeInfo(startDate, endDate) {
+            if (startDate && endDate) {
+                const diffTime = Math.abs(endDate - startDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                const infoElement = document.getElementById('date-range-info');
+                infoElement.textContent = `活动持续时间: ${diffDays} 天`;
+            }
+        }
     });
 </script>
-{% endblock %}
 {% endblock %} 

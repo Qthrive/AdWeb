@@ -1,99 +1,135 @@
 {% extends 'AdManage/base.html' %}
+{% load static %}
 
 {% block title %}发票管理 - AdWeb广告管理平台{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>发票申请管理</h2>
-</div>
-<div class="card">
-    <div class="card-header">
-        <h5 class="card-title mb-0">发票申请列表</h5>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>申请人</th>
-                        <th>金额</th>
-                        <th>抬头</th>
-                        <th>税号</th>
-                        <th>申请时间</th>
-                        <th>状态</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for invoice in invoices %}
-                    <tr>
-                        <td>{{ invoice.user.username }}</td>
-                        <td>¥{{ invoice.amount }}</td>
-                        <td>{{ invoice.company_name }}</td>
-                        <td>{{ invoice.tax_number }}</td>
-                        <td>{{ invoice.request_date|date:"Y-m-d H:i" }}</td>
-                        <td>
-                            {% if invoice.status == 'pending' %}
-                            <span class="badge bg-warning">待处理</span>
-                            {% elif invoice.status == 'approved' %}
-                            <span class="badge bg-success">已批准</span>
-                            {% elif invoice.status == 'issued' %}
-                            <span class="badge bg-primary">已开具</span>
-                            {% else %}
-                            <span class="badge bg-danger">已拒绝</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{% url 'payment:invoice_admin_review' invoice.id %}" class="btn btn-sm btn-outline-primary">审核</a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="text-center">暂无发票申请</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% if invoices.has_other_pages %}
-        <nav class="mt-4">
-            <ul class="pagination justify-content-center">
-                {% if invoices.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ invoices.previous_page_number }}">
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                </li>
-                {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link"><i class="fas fa-chevron-left"></i></span>
-                </li>
-                {% endif %}
-                {% for i in invoices.paginator.page_range %}
-                    {% if invoices.number == i %}
-                    <li class="page-item active">
-                        <span class="page-link">{{ i }}</span>
-                    </li>
-                    {% else %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ i }}">{{ i }}</a>
-                    </li>
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <h6 class="mb-0">发票管理</h6>
+                </div>
+                <div class="card-body px-0 pt-0 pb-2">
+                    <div class="table-responsive p-0">
+                        <table class="table align-items-center mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">ID</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">申请用户</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">发票抬头</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">金额</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">状态</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">申请时间</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for invoice in invoices %}
+                                <tr>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0 ps-3">{{ invoice.id }}</p>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex px-2 py-1">
+                                            <div class="d-flex flex-column justify-content-center">
+                                                <h6 class="mb-0 text-sm">{{ invoice.user.username }}</h6>
+                                                <p class="text-xs text-secondary mb-0">{{ invoice.user.email }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0 ps-3">{{ invoice.info.title }}</p>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0 ps-3">¥ {{ invoice.amount }}</p>
+                                    </td>
+                                    <td>
+                                        <div class="ps-3">
+                                            {% if invoice.status == 'pending' %}
+                                                <span class="badge bg-warning">待审核</span>
+                                            {% elif invoice.status == 'approved' %}
+                                                <span class="badge bg-info">已批准</span>
+                                            {% elif invoice.status == 'completed' %}
+                                                <span class="badge bg-success">已完成</span>
+                                            {% elif invoice.status == 'rejected' %}
+                                                <span class="badge bg-danger">已拒绝</span>
+                                            {% elif invoice.status == 'cancelled' %}
+                                                <span class="badge bg-secondary">已取消</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0 ps-3">{{ invoice.created_at|date:"Y-m-d H:i" }}</p>
+                                    </td>
+                                    <td>
+                                        <div class="ps-3">
+                                            <a href="{% url 'payment:invoice_admin_review' invoice.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i> 查看
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <p class="text-secondary mb-0">暂无发票申请记录</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if is_paginated %}
+                    <div class="d-flex justify-content-center mt-4">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination">
+                                {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1" aria-label="First">
+                                        <span aria-hidden="true">&laquo;&laquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                {% endif %}
+                                
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                    <li class="page-item active">
+                                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                    </li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                    </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                                        <span aria-hidden="true">&raquo;&raquo;</span>
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
                     {% endif %}
-                {% endfor %}
-                {% if invoices.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ invoices.next_page_number }}">
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                </li>
-                {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link"><i class="fas fa-chevron-right"></i></span>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
-        {% endif %}
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %} 

@@ -4,6 +4,177 @@
 
 {% block content %}
 <div class="row">
+    {% if user.is_staff %}
+    <!-- 管理员界面 -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">快捷操作</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'users:register_list' %}?status=pending" class="btn btn-primary w-100">
+                            <i class="fas fa-user-check"></i> 用户注册审核
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'adaudit:ad_list' %}?status=pending" class="btn btn-success w-100">
+                            <i class="fas fa-tasks"></i> 广告审核
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'payment:invoice_admin_list' %}" class="btn btn-info w-100">
+                            <i class="fas fa-file-invoice"></i> 发票申请审核
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 待审核用户列表 -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">待审核用户注册</h5>
+                <a href="{% url 'users:register_list' %}" class="btn btn-sm btn-outline-primary">查看全部</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>用户名</th>
+                                <th>邮箱</th>
+                                <th>注册时间</th>
+                                <th>注册IP</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user_item in pending_users|slice:":5" %}
+                            <tr>
+                                <td>{{ user_item.username }}</td>
+                                <td>{{ user_item.email }}</td>
+                                <td>{{ user_item.date_joined|date:"Y-m-d H:i" }}</td>
+                                <td>{{ user_item.register_ip|default:"未知" }}</td>
+                                <td>
+                                    <a href="{% url 'users:register_detail' user_item.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> 审核
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3">
+                                    <p class="text-muted mb-0">暂无待审核用户</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 待审核广告列表 -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">待审核广告</h5>
+                <a href="{% url 'adaudit:ad_list' %}" class="btn btn-sm btn-outline-primary">查看全部</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>广告名称</th>
+                                <th>广告主</th>
+                                <th>广告位</th>
+                                <th>提交时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ad_item in pending_ads|slice:":5" %}
+                            <tr>
+                                <td>{{ ad_item.name }}</td>
+                                <td>{{ ad_item.advertiser.username }}</td>
+                                <td>{{ ad_item.placement.get_placement_type_display }}</td>
+                                <td>{{ ad_item.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'adaudit:ad_review' ad_item.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> 审核
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3">
+                                    <p class="text-muted mb-0">暂无待审核广告</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 待处理发票申请 -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">待处理发票申请</h5>
+                <a href="{% url 'payment:invoice_admin_list' %}" class="btn btn-sm btn-outline-primary">查看全部</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>申请用户</th>
+                                <th>发票抬头</th>
+                                <th>金额</th>
+                                <th>申请时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in pending_invoices|slice:":5" %}
+                            <tr>
+                                <td>{{ invoice.id }}</td>
+                                <td>{{ invoice.user.username }}</td>
+                                <td>{{ invoice.info.title }}</td>
+                                <td>¥{{ invoice.amount }}</td>
+                                <td>{{ invoice.created_at|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'payment:invoice_admin_review' invoice.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i> 审核
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-3">
+                                    <p class="text-muted mb-0">暂无待处理发票申请</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% else %}
+    <!-- 广告主界面 -->
     <!-- 账户概览 -->
     <div class="col-md-4 mb-4">
         <div class="card">
@@ -34,7 +205,8 @@
                 <h5 class="card-title mb-0">快捷操作</h5>
             </div>
             <div class="card-body">
-                <div class="row">                    <div class="col-md-6 mb-3">
+                <div class="row">                    
+                    <div class="col-md-6 mb-3">
                         <a href="{% url 'admanage:campaign_create' %}" class="btn btn-primary w-100">
                             <i class="fas fa-plus"></i> 创建广告活动
                         </a>
@@ -48,105 +220,110 @@
             </div>
         </div>
     </div>
-</div>
 
-<!-- 广告活动列表 -->
-<div class="card mb-4">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0">最近广告活动</h5>
-        <a href="{% url 'admanage:campaign_list' %}" class="btn btn-sm btn-outline-primary">查看全部</a>
-    </div>
-    <div class="card-body">
-        {% if campaigns %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>活动名称</th>
-                            <th>状态</th>
-                            <th>预算</th>
-                            <th>已消耗</th>
-                            <th>开始时间</th>
-                            <th>结束时间</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for campaign in campaigns|slice:":5" %}
-                        <tr>
-                            <td>{{ campaign.name }}</td>
-                            <td>
-                                <span class="badge bg-{{ campaign.status|yesno:'success,warning,danger' }}">
-                                    {{ campaign.get_status_display }}
-                                </span>
-                            </td>
-                            <td>¥{{ campaign.budget }}</td>
-                            <td>¥{{ campaign.calculate_remaining_budget }}</td>
-                            <td>{{ campaign.start_date|date:"Y-m-d" }}</td>
-                            <td>{{ campaign.end_date|date:"Y-m-d" }}</td>
-                            <td>
-                                <a href="{% url 'admanage:campaign_detail' campaign.id %}" class="btn btn-sm btn-outline-primary">
-                                    查看
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- 广告活动列表 -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">最近广告活动</h5>
+                <a href="{% url 'admanage:campaign_list' %}" class="btn btn-sm btn-outline-primary">查看全部</a>
             </div>
-        {% else %}
-            <p class="text-center text-muted">暂无广告活动</p>
-        {% endif %}
+            <div class="card-body">
+                {% if campaigns %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>活动名称</th>
+                                    <th>状态</th>
+                                    <th>预算</th>
+                                    <th>已消耗</th>
+                                    <th>开始时间</th>
+                                    <th>结束时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for campaign in campaigns|slice:":5" %}
+                                <tr>
+                                    <td>{{ campaign.name }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ campaign.status|yesno:'success,warning,danger' }}">
+                                            {{ campaign.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>¥{{ campaign.budget }}</td>
+                                    <td>¥{{ campaign.calculate_remaining_budget }}</td>
+                                    <td>{{ campaign.start_date|date:"Y-m-d" }}</td>
+                                    <td>{{ campaign.end_date|date:"Y-m-d" }}</td>
+                                    <td>
+                                        <a href="{% url 'admanage:campaign_detail' campaign.id %}" class="btn btn-sm btn-outline-primary">
+                                            查看
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">暂无广告活动</p>
+                {% endif %}
+            </div>
+        </div>
     </div>
-</div>
 
-<!-- 广告列表 -->
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title mb-0">最近广告</h5>
-        <a href="#" class="btn btn-sm btn-outline-primary">查看全部</a>
-    </div>
-    <div class="card-body">
-        {% if ads %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>广告名称</th>
-                            <th>所属活动</th>
-                            <th>状态</th>
-                            <th>预算</th>
-                            <th>已消耗</th>
-                            <th>创建时间</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for ad in ads|slice:":5" %}
-                        <tr>
-                            <td>{{ ad.name }}</td>
-                            <td>{{ ad.campaign.name }}</td>
-                            <td>
-                                <span class="badge bg-{{ ad.status|yesno:'success,warning,danger' }}">
-                                    {{ ad.get_status_display }}
-                                </span>
-                            </td>
-                            <td>¥{{ ad.budget }}</td>
-                            <td>¥{{ ad.calculate_remaining_budget }}</td>
-                            <td>{{ ad.created_at|date:"Y-m-d" }}</td>
-                            <td>
-                                <a href="#" class="btn btn-sm btn-outline-primary">
-                                    查看
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <!-- 广告列表 -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">最近广告</h5>
+                <a href="{% url 'admanage:campaign_list' %}" class="btn btn-sm btn-outline-primary">查看全部</a>
             </div>
-        {% else %}
-            <p class="text-center text-muted">暂无广告</p>
-        {% endif %}
+            <div class="card-body">
+                {% if ads %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>广告名称</th>
+                                    <th>所属活动</th>
+                                    <th>状态</th>
+                                    <th>预算</th>
+                                    <th>已消耗</th>
+                                    <th>创建时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ad in ads|slice:":5" %}
+                                <tr>
+                                    <td>{{ ad.name }}</td>
+                                    <td>{{ ad.campaign.name }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ ad.status|yesno:'success,warning,danger' }}">
+                                            {{ ad.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>¥{{ ad.budget }}</td>
+                                    <td>¥{{ ad.calculate_remaining_budget }}</td>
+                                    <td>{{ ad.created_at|date:"Y-m-d" }}</td>
+                                    <td>
+                                        <a href="{% url 'admanage:ad_detail' ad.campaign.id ad.id %}" class="btn btn-sm btn-outline-primary">
+                                            查看
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">暂无广告</p>
+                {% endif %}
+            </div>
+        </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

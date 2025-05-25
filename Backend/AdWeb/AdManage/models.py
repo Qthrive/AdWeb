@@ -1,5 +1,6 @@
 from django.db import models
 from Users.models import User
+from django.utils import timezone
 
 class Campaign(models.Model):
     STATUS_CHOICES = [
@@ -22,6 +23,16 @@ class Campaign(models.Model):
         # 计算剩余预算
         spent = sum(ad.calculate_remaining_budget() for ad in self.ads.all())
         return max(0, self.budget - spent)
+
+    def check_and_update_status(self):
+        """检查并更新广告活动状态"""
+        now = timezone.now()
+        # 如果当前状态是active（进行中）或paused（已暂停），且结束时间已过
+        if self.status in ['active', 'paused'] and now > self.end_date:
+            self.status = 'ended'
+            self.save(update_fields=['status'])
+            return True
+        return False
 
     class Meta:
         verbose_name = '广告活动'

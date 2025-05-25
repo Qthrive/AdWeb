@@ -1,0 +1,41 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}注册申请已提交 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0 text-center"><i class="fas fa-check-circle text-success"></i> 注册申请已提交</h4>
+                </div>
+                <div class="card-body text-center">
+                    <h5 class="card-title mb-4">感谢您申请成为AdWeb广告管理平台的广告主！</h5>
+                    
+                    <div class="alert alert-info mt-4">
+                        <h5><i class="fas fa-info-circle"></i> 后续流程</h5>
+                        <p>您的注册申请已提交成功，需要等待管理员审核。审核结果将通过邮件通知，请注意查收。</p>
+                    </div>
+                    
+                    <div class="text-start">
+                        <h5>审核流程：</h5>
+                        <ol>
+                            <li>管理员将在1-2个工作日内审核您的申请</li>
+                            <li>审核结果将发送至您注册时填写的邮箱</li>
+                            <li>审核通过后，您可以使用注册的邮箱和密码登录系统</li>
+                            <li>如有疑问，请联系平台客服</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'users:login' %}" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> 返回登录页
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

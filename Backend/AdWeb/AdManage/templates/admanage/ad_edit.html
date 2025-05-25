@@ -4,6 +4,41 @@
 
 {% block extra_css %}
 <link href="https://cdn.bootcdn.net/ajax/libs/flatpickr/4.6.13/flatpickr.min.css" rel="stylesheet">
+<link href="https://cdn.bootcdn.net/ajax/libs/flatpickr/4.6.13/themes/material_blue.min.css" rel="stylesheet">
+<style>
+    .date-picker-wrapper {
+        position: relative;
+    }
+    .date-picker-wrapper .input-group-text {
+        cursor: pointer;
+        background-color: #f8f9fa;
+    }
+    .flatpickr-calendar {
+        box-shadow: 0 4px 20px 0px rgba(0, 0, 0, 0.14), 0 7px 10px -5px rgba(0, 0, 0, 0.1);
+        border-radius: 6px;
+    }
+    .date-range-info {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    .date-presets {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    .date-preset-btn {
+        font-size: 12px;
+        padding: 2px 8px;
+    }
+    .flatpickr-input {
+        background-color: #fff !important;
+    }
+    .flatpickr-calendar.open {
+        z-index: 9999 !important;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -71,15 +106,34 @@
             <!-- 广告素材 -->
             <div class="mb-3" id="creative_container">
                 <label for="creative" class="form-label">广告素材</label>
-                <input type="file" class="form-control" id="creative" name="creative" accept="image/*">
+                <input type="file" class="form-control" id="creative" name="creative" accept="image/jpeg,image/png,image/gif">
                 <div class="form-text" id="creative_requirements">
-                    支持jpg、png格式，大小不超过2MB
+                    支持jpg、png、gif格式，大小不超过2MB
                     {% if ad.image %}
-                    <br>当前素材：<a href="{{ ad.image.url }}" target="_blank">查看</a>
+                    <br>当前素材：<a href="{{ ad.image.url }}" target="_blank" class="text-decoration-none">查看当前图片</a>
                     {% endif %}
                 </div>
                 <div class="invalid-feedback">
                     请上传广告素材
+                </div>
+                
+                <!-- 添加图片预览区 -->
+                <div id="image_preview" class="mt-3 {% if not ad.image and not preview_image %}d-none{% endif %}">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="card-subtitle mb-2 text-muted">图片预览</h6>
+                            {% if ad.image %}
+                            <img id="current_image" 
+                                 src="/static/images/test-{{ ad.image.name|cut:'ads/images/' }}" 
+                                 alt="{{ ad.name }}" 
+                                 class="img-fluid rounded mb-2" 
+                                 style="max-height: 200px; max-width: 100%;" 
+                                 onerror="this.src='/static/images/image-placeholder.png'">
+                            <p class="text-muted small">(当前图片)</p>
+                            {% endif %}
+                            <img id="preview_image" src="#" alt="新图片预览" class="img-fluid rounded d-none" style="max-height: 200px; max-width: 100%;">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -94,24 +148,34 @@
             </div>
 
             <!-- 投放时间 -->
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="start_date" class="form-label">开始时间</label>
-                    <input type="text" class="form-control datepicker" id="start_date" name="start_date" 
-                           value="{{ ad.start_date|date:'Y-m-d H:i' }}" required>
-                    <div class="invalid-feedback">
-                        请选择开始时间
+            <div class="mb-3">
+                <label class="form-label">投放时间范围</label>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="start_date" class="form-label">开始日期</label>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control date-picker" id="start_date_picker" name="start_date_picker" placeholder="选择开始日期" required>
+                            <span class="input-group-text" id="start-date-icon"><i class="fas fa-calendar-alt"></i></span>
+                        </div>
+                        <div class="invalid-feedback">
+                            请选择开始日期
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="end_date" class="form-label">结束日期</label>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control date-picker" id="end_date_picker" name="end_date_picker" placeholder="选择结束日期" required>
+                            <span class="input-group-text" id="end-date-icon"><i class="fas fa-calendar-alt"></i></span>
+                        </div>
+                        <div class="invalid-feedback">
+                            请选择结束日期
+                        </div>
                     </div>
                 </div>
-
-                <div class="col-md-6 mb-3">
-                    <label for="end_date" class="form-label">结束时间</label>
-                    <input type="text" class="form-control datepicker" id="end_date" name="end_date" 
-                           value="{{ ad.end_date|date:'Y-m-d H:i' }}" required>
-                    <div class="invalid-feedback">
-                        请选择结束时间
-                    </div>
-                </div>
+                <div class="date-range-info" id="date-range-info"></div>
+                <!-- 隐藏的输入字段，用于表单提交 -->
+                <input type="hidden" id="start_date" name="start_date" value="{{ ad.start_date|date:'Y-m-d H:i' }}">
+                <input type="hidden" id="end_date" name="end_date" value="{{ ad.end_date|date:'Y-m-d H:i' }}">
             </div>
 
             <!-- 广告描述 -->
@@ -143,17 +207,119 @@
 <script src="https://cdn.bootcdn.net/ajax/libs/flatpickr/4.6.13/l10n/zh.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // 初始化日期时间选择器
-    flatpickr(".datepicker", {
+    // 获取初始日期值
+    const startDateValue = document.getElementById('start_date').value;
+    const endDateValue = document.getElementById('end_date').value;
+    
+    // 获取DOM元素
+    const startDateInput = document.getElementById('start_date_picker');
+    const endDateInput = document.getElementById('end_date_picker');
+    const startDateHidden = document.getElementById('start_date');
+    const endDateHidden = document.getElementById('end_date');
+    const dateRangeInfo = document.getElementById('date-range-info');
+    
+    // 初始化开始日期选择器
+    const startDatePicker = flatpickr(startDateInput, {
+        locale: "zh",
         enableTime: true,
         dateFormat: "Y-m-d H:i",
         minDate: "today",
-        locale: "zh"
+        time_24hr: true,
+        disableMobile: true,
+        defaultDate: startDateValue ? new Date(startDateValue.replace(' ', 'T')) : null,
+        onChange: function(selectedDates, dateStr) {
+            if (selectedDates.length > 0) {
+                // 设置隐藏字段的值
+                startDateHidden.value = formatDate(selectedDates[0]);
+                
+                // 设置结束日期选择器的最小日期
+                endDatePicker.set('minDate', selectedDates[0]);
+                
+                // 如果已经选择了结束日期，更新日期范围信息
+                if (endDateHidden.value) {
+                    updateDateRangeInfo(selectedDates[0], new Date(endDateHidden.value));
+                }
+            }
+        }
     });
+    
+    // 初始化结束日期选择器
+    const endDatePicker = flatpickr(endDateInput, {
+        locale: "zh",
+        enableTime: true,
+        dateFormat: "Y-m-d H:i",
+        minDate: startDateValue ? new Date(startDateValue.replace(' ', 'T')) : "today",
+        time_24hr: true,
+        disableMobile: true,
+        defaultDate: endDateValue ? new Date(endDateValue.replace(' ', 'T')) : null,
+        onChange: function(selectedDates, dateStr) {
+            if (selectedDates.length > 0) {
+                // 设置隐藏字段的值
+                endDateHidden.value = formatDate(selectedDates[0]);
+                
+                // 如果已经选择了开始日期，更新日期范围信息
+                if (startDateHidden.value) {
+                    updateDateRangeInfo(new Date(startDateHidden.value), selectedDates[0]);
+                }
+            }
+        }
+    });
+    
+    // 点击图标也可以打开日期选择器
+    document.getElementById('start-date-icon').addEventListener('click', function() {
+        startDatePicker.open();
+    });
+    
+    document.getElementById('end-date-icon').addEventListener('click', function() {
+        endDatePicker.open();
+    });
+    
+    // 如果有初始值，更新日期范围信息
+    if (startDateValue && endDateValue) {
+        updateDateRangeInfo(
+            new Date(startDateValue.replace(' ', 'T')),
+            new Date(endDateValue.replace(' ', 'T'))
+        );
+    }
+    
+    // 格式化日期为 "YYYY-MM-DD HH:MM" 格式
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
+    }
+    
+    // 更新日期范围信息
+    function updateDateRangeInfo(startDate, endDate) {
+        if (startDate && endDate) {
+            const diffTime = Math.abs(endDate - startDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            const infoElement = document.getElementById('date-range-info');
+            infoElement.textContent = `投放持续时间: ${diffDays} 天`;
+        }
+    }
 
     // 表单验证
     const form = document.querySelector('.needs-validation');
     form.addEventListener('submit', function(event) {
+        // 检查是否选择了日期
+        if (!document.getElementById('start_date').value) {
+            document.getElementById('start_date_picker').classList.add('is-invalid');
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        if (!document.getElementById('end_date').value) {
+            document.getElementById('end_date_picker').classList.add('is-invalid');
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
         if (!form.checkValidity()) {
             event.preventDefault();
             event.stopPropagation();
@@ -161,28 +327,63 @@ document.addEventListener('DOMContentLoaded', function() {
         form.classList.add('was-validated');
     });
 
-    // 图片验证
+    // 图片预览相关元素
     const creativeInput = document.getElementById('creative');
+    const imagePreview = document.getElementById('image_preview');
+    const previewImage = document.getElementById('preview_image');
+    const currentImage = document.getElementById('current_image');
+    
+    // 图片预览功能
     creativeInput.addEventListener('change', function() {
         const file = this.files[0];
-        if (file) {
-            // 检查文件大小（限制为2MB）
-            if (file.size > 2 * 1024 * 1024) {
-                alert('图片大小不能超过2MB');
-                this.value = '';
-                return;
+        
+        // 如果没有选择文件
+        if (!file) {
+            previewImage.classList.add('d-none');
+            if (currentImage) {
+                currentImage.classList.remove('d-none');
             }
-
-            // 检查图片尺寸
-            const img = new Image();
-            img.onload = function() {
-                if (this.width > 1920 || this.height > 1080) {
-                    alert('图片尺寸不能超过1920x1080');
-                    creativeInput.value = '';
-                }
-            };
-            img.src = URL.createObjectURL(file);
+            return;
         }
+
+        // 文件大小验证（限制为2MB）
+        if (file.size > 2 * 1024 * 1024) {
+            alert('图片大小不能超过2MB');
+            this.value = '';
+            previewImage.classList.add('d-none');
+            return;
+        }
+
+        // 文件类型验证
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+        if (!validTypes.includes(file.type)) {
+            alert('只支持JPG、PNG和GIF格式的图片');
+            this.value = '';
+            previewImage.classList.add('d-none');
+            return;
+        }
+
+        // 显示图片预览，隐藏当前图片
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            previewImage.classList.remove('d-none');
+            imagePreview.classList.remove('d-none');
+            if (currentImage) {
+                currentImage.classList.add('d-none');
+            }
+        };
+        reader.readAsDataURL(file);
+
+        // 图片尺寸验证
+        const img = new Image();
+        img.onload = function() {
+            if (this.width > 1920 || this.height > 1080) {
+                console.warn('图片尺寸过大，可能会影响显示效果');
+                // 这里不阻止用户上传，只是给出警告
+            }
+        };
+        img.src = URL.createObjectURL(file);
     });
 });
 </script>

@@ -55,6 +55,7 @@ class Ad(models.Model):
     # 结束时间
     end_date = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     campaign = models.ForeignKey(Campaign, on_delete=models.CASCADE, related_name='ads', verbose_name='所属活动', null=True, blank=True)
 
     def validate_image_format(self):

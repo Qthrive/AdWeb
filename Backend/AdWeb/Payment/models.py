@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from Users.models import User
 from AdPlace.models import Ad
 
@@ -40,28 +41,81 @@ class Transaction(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.get_transaction_type_display()} - {self.amount}"
 
-class InvoiceRequest(models.Model):
-    STATUS_CHOICES = [
-        ('pending', '待处理'),
-        ('approved', '已批准'),
-        ('rejected', '已拒绝'),
-        ('issued', '已开具')
-    ]
-
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invoice_requests')
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
-    company_name = models.CharField(max_length=200)
-    tax_number = models.CharField(max_length=50)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    request_date = models.DateTimeField(auto_now_add=True)
-    process_date = models.DateTimeField(null=True, blank=True)
-    notes = models.TextField(blank=True)
-    email = models.EmailField(verbose_name='接收邮箱', default='')
+class InvoiceInfo(models.Model):
+    """发票信息"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invoice_infos', verbose_name='用户')
+    title = models.CharField(max_length=100, verbose_name='发票抬头')
+    tax_number = models.CharField(max_length=30, verbose_name='税号')
+    address = models.CharField(max_length=200, blank=True, null=True, verbose_name='地址')
+    telephone = models.CharField(max_length=20, blank=True, null=True, verbose_name='电话')
+    bank_name = models.CharField(max_length=100, blank=True, null=True, verbose_name='开户银行')
+    bank_account = models.CharField(max_length=30, blank=True, null=True, verbose_name='银行账号')
+    is_default = models.BooleanField(default=False, verbose_name='是否默认')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
 
     class Meta:
-        verbose_name = '发票申请'
-        verbose_name_plural = '发票申请'
-        ordering = ['-request_date']
+        verbose_name = '发票信息'
+        verbose_name_plural = '发票信息'
 
     def __str__(self):
-        return f"{self.user.username} - {self.amount} - {self.get_status_display()}"
+        return f"{self.title} - {self.user.username}"
+
+class Invoice(models.Model):
+    """发票申请记录"""
+    INVOICE_TYPE_CHOICES = (
+        ('normal', '增值税普通发票'),
+        ('special', '增值税专用发票'),
+        ('electronic', '电子发票'),
+    )
+    
+    STATUS_CHOICES = (
+        ('pending', '待处理'),
+        ('processing', '处理中'),
+        ('completed', '已开具'),
+        ('rejected', '已拒绝'),
+        ('cancelled', '已取消'),
+    )
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invoices', verbose_name='申请用户')
+    invoice_info = models.ForeignKey(InvoiceInfo, on_delete=models.PROTECT, verbose_name='发票信息')
+    invoice_type = models.CharField(max_length=20, choices=INVOICE_TYPE_CHOICES, default='normal', verbose_name='发票类型')
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='发票金额')
+    title = models.CharField(max_length=100, verbose_name='发票抬头')
+    tax_number = models.CharField(max_length=30, verbose_name='税号')
+    content = models.CharField(max_length=100, default='广告服务费', verbose_name='发票内容')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name='状态')
+    remark = models.TextField(blank=True, null=True, verbose_name='备注')
+    email = models.EmailField(verbose_name='接收邮箱')
+    address = models.CharField(max_length=200, blank=True, null=True, verbose_name='邮寄地址')
+    contact_name = models.CharField(max_length=50, blank=True, null=True, verbose_name='联系人')
+    contact_phone = models.CharField(max_length=20, blank=True, null=True, verbose_name='联系电话')
+    invoice_number = models.CharField(max_length=50, blank=True, null=True, verbose_name='发票号码')
+    invoice_date = models.DateField(blank=True, null=True, verbose_name='开票日期')
+    express_company = models.CharField(max_length=50, blank=True, null=True, verbose_name='快递公司')
+    tracking_number = models.CharField(max_length=50, blank=True, null=True, verbose_name='快递单号')
+    admin_remark = models.TextField(blank=True, null=True, verbose_name='管理员备注')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='申请时间')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+    
+    class Meta:
+        verbose_name = '发票'
+        verbose_name_plural = '发票'
+        ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"{self.title} - {self.amount} - {self.get_status_display()}"
+
+class InvoiceItem(models.Model):
+    """发票包含的消费项目"""
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items', verbose_name='发票')
+    transaction = models.ForeignKey(Transaction, on_delete=models.PROTECT, related_name='invoice_items', verbose_name='交易记录')
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='金额')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    
+    class Meta:
+        verbose_name = '发票项目'
+        verbose_name_plural = '发票项目'
+        
+    def __str__(self):
+        return f"{self.invoice.title} - {self.amount}"

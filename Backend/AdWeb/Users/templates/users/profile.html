@@ -1,0 +1,213 @@
+{% extends 'AdManage/base.html' %}
+
+{% block title %}个人资料 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>个人资料</h2>
+        <a href="{% url 'admanage:platform_home' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> 返回首页
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- 左侧：用户资料卡片 -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">账户信息</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="avatar mb-3">
+                        <i class="fas fa-user-circle fa-5x text-primary"></i>
+                    </div>
+                    <h4>{{ user.username }}</h4>
+                    <p class="text-muted">{{ user.email }}</p>
+                    
+                    <div class="mb-3">
+                        <span class="badge bg-primary">{{ user_type_display }}</span>
+                        {% if not user.is_staff %}
+                            {% if user.audit_status == 'pending' %}
+                                <span class="badge bg-warning">审核中</span>
+                            {% elif user.audit_status == 'approved' %}
+                                <span class="badge bg-success">已通过</span>
+                            {% elif user.audit_status == 'rejected' %}
+                                <span class="badge bg-danger">已拒绝</span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'users:change_password' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-key"></i> 修改密码
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 账户统计 -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">账户统计</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if is_admin %}
+                        <!-- 管理员统计 -->
+                        <div class="col-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-users fa-2x text-info"></i>
+                                </div>
+                                <div>
+                                    <span class="d-block text-muted">广告主用户</span>
+                                    <h5 class="mb-0">{{ total_users }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-user-clock fa-2x text-warning"></i>
+                                </div>
+                                <div>
+                                    <span class="d-block text-muted">待审核用户</span>
+                                    <h5 class="mb-0">{{ pending_users }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-bullhorn fa-2x text-success"></i>
+                                </div>
+                                <div>
+                                    <span class="d-block text-muted">广告活动</span>
+                                    <h5 class="mb-0">{{ campaign_count }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-ad fa-2x text-primary"></i>
+                                </div>
+                                <div>
+                                    <span class="d-block text-muted">广告</span>
+                                    <h5 class="mb-0">{{ ad_count }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <!-- 广告主统计 -->
+                        <div class="col-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-ad fa-2x text-info"></i>
+                                </div>
+                                <div>
+                                    <span class="d-block text-muted">广告</span>
+                                    <h5 class="mb-0">{{ ad_count }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-bullhorn fa-2x text-warning"></i>
+                                </div>
+                                <div>
+                                    <span class="d-block text-muted">广告活动</span>
+                                    <h5 class="mb-0">{{ campaign_count }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="border-top pt-3 mt-2">
+                        <div class="mb-2">
+                            <small class="text-muted">注册时间</small>
+                            <div>{{ register_time|date:"Y年m月d日 H:i" }}</div>
+                        </div>
+                        <div>
+                            <small class="text-muted">上次登录</small>
+                            <div>{{ last_login|date:"Y年m月d日 H:i"|default:"从未登录" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧：修改资料表单 -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">修改个人资料</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'users:profile' %}">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
+                                {{ form.username }}
+                                {% if form.username.errors %}
+                                <div class="text-danger">{{ form.username.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
+                                {{ form.email }}
+                                <small class="text-muted">邮箱地址不可修改</small>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.phone.id_for_label }}" class="form-label">{{ form.phone.label }}</label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                <div class="text-danger">{{ form.phone.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.job_title.id_for_label }}" class="form-label">{{ form.job_title.label }}</label>
+                                {{ form.job_title }}
+                                {% if form.job_title.errors %}
+                                <div class="text-danger">{{ form.job_title.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.company.id_for_label }}" class="form-label">{{ form.company.label }}</label>
+                            {{ form.company }}
+                            {% if form.company.errors %}
+                            <div class="text-danger">{{ form.company.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.bio.id_for_label }}" class="form-label">{{ form.bio.label }}</label>
+                            {{ form.bio }}
+                            {% if form.bio.errors %}
+                            <div class="text-danger">{{ form.bio.errors.0 }}</div>
+                            {% endif %}
+                            <small class="text-muted">请简要介绍自己或您的公司/团队</small>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 保存修改
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,151 @@
+{% extends 'AdManage/base.html' %}
+{% load static %}
+
+{% block title %}管理发票信息 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">管理发票信息</h6>
+                    <a href="{% url 'payment:invoice' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> 返回发票申请
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border mb-4">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">添加新的发票信息</h6>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post" action="{% url 'payment:invoice_info_manage' %}" class="needs-validation" novalidate>
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="add">
+                                        
+                                        <div class="mb-3">
+                                            <label for="title" class="form-label">发票抬头</label>
+                                            <input type="text" class="form-control" id="title" name="title" required>
+                                            <div class="invalid-feedback">
+                                                请输入发票抬头
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="tax_number" class="form-label">税号</label>
+                                            <input type="text" class="form-control" id="tax_number" name="tax_number" required>
+                                            <div class="invalid-feedback">
+                                                请输入税号
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="address" class="form-label">地址</label>
+                                            <input type="text" class="form-control" id="address" name="address">
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="telephone" class="form-label">电话</label>
+                                            <input type="text" class="form-control" id="telephone" name="telephone">
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="bank_name" class="form-label">开户银行</label>
+                                            <input type="text" class="form-control" id="bank_name" name="bank_name">
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="bank_account" class="form-label">银行账号</label>
+                                            <input type="text" class="form-control" id="bank_account" name="bank_account">
+                                        </div>
+                                        
+                                        <div class="mb-3 form-check">
+                                            <input type="checkbox" class="form-check-input" id="is_default" name="is_default">
+                                            <label class="form-check-label" for="is_default">设为默认</label>
+                                        </div>
+                                        
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-plus me-1"></i> 添加发票信息
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card border">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0">已保存的发票信息</h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="list-group list-group-flush">
+                                        {% for info in invoice_infos %}
+                                        <div class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-1">{{ info.title }}</h6>
+                                                    <p class="text-sm text-muted mb-0">税号：{{ info.tax_number }}</p>
+                                                    {% if info.address %}<p class="text-sm text-muted mb-0">地址：{{ info.address }}</p>{% endif %}
+                                                    {% if info.telephone %}<p class="text-sm text-muted mb-0">电话：{{ info.telephone }}</p>{% endif %}
+                                                </div>
+                                                <div class="d-flex flex-column align-items-end">
+                                                    {% if info.is_default %}
+                                                    <span class="badge bg-primary mb-2">默认</span>
+                                                    {% else %}
+                                                    <form method="post" action="{% url 'payment:invoice_info_manage' %}">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="action" value="set_default">
+                                                        <input type="hidden" name="info_id" value="{{ info.id }}">
+                                                        <button type="submit" class="btn btn-sm btn-outline-primary mb-2">设为默认</button>
+                                                    </form>
+                                                    {% endif %}
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="{% url 'payment:invoice_info_edit' info.id %}" class="btn btn-outline-secondary">
+                                                            <i class="fas fa-edit"></i> 编辑
+                                                        </a>
+                                                        <a href="{% url 'payment:invoice_info_delete' info.id %}" class="btn btn-outline-danger">
+                                                            <i class="fas fa-trash"></i> 删除
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% empty %}
+                                        <div class="list-group-item text-center py-4">
+                                            <p class="text-muted mb-0">暂无保存的发票信息</p>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 表单验证
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,94 @@
+{% extends 'AdManage/base.html' %}
+{% load static %}
+
+{% block title %}编辑发票信息 - AdWeb广告管理平台{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header pb-0 d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">编辑发票信息</h6>
+                    <a href="{% url 'payment:invoice_info_manage' %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> 返回发票信息列表
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'payment:invoice_info_edit' invoice_info.id %}" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">发票抬头</label>
+                            <input type="text" class="form-control" id="title" name="title" value="{{ invoice_info.title }}" required>
+                            <div class="invalid-feedback">
+                                请输入发票抬头
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="tax_number" class="form-label">税号</label>
+                            <input type="text" class="form-control" id="tax_number" name="tax_number" value="{{ invoice_info.tax_number }}" required>
+                            <div class="invalid-feedback">
+                                请输入税号
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">地址</label>
+                            <input type="text" class="form-control" id="address" name="address" value="{{ invoice_info.address|default:'' }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="telephone" class="form-label">电话</label>
+                            <input type="text" class="form-control" id="telephone" name="telephone" value="{{ invoice_info.telephone|default:'' }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="bank_name" class="form-label">开户银行</label>
+                            <input type="text" class="form-control" id="bank_name" name="bank_name" value="{{ invoice_info.bank_name|default:'' }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="bank_account" class="form-label">银行账号</label>
+                            <input type="text" class="form-control" id="bank_account" name="bank_account" value="{{ invoice_info.bank_account|default:'' }}">
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="is_default" name="is_default" {% if invoice_info.is_default %}checked{% endif %}>
+                            <label class="form-check-label" for="is_default">设为默认</label>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'payment:invoice_info_manage' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> 取消
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i> 保存更改
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 表单验证
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+});
+</script>
+{% endblock %} 
