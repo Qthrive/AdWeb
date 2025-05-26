@@ -98,6 +98,9 @@ class Invoice(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='申请时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
     
+    # 新增字段，用于存储电子发票PDF文件路径
+    invoice_pdf = models.FileField(upload_to='invoices/', blank=True, null=True, verbose_name='电子发票PDF')
+    
     class Meta:
         verbose_name = '发票'
         verbose_name_plural = '发票'

@@ -7,6 +7,11 @@ from Users.models import User, Notification
 from decimal import Decimal
 from django.utils import timezone
 from django.db import models
+from django.http import HttpResponse, FileResponse
+from .utils import InvoiceGenerator
+import os
+from django.conf import settings
+from django.urls import reverse
 
 @login_required
 def invoice_request(request):
@@ -268,6 +273,8 @@ def invoice_admin_review(request, invoice_id):
             invoice_date = request.POST.get('invoice_date')
             express_company = request.POST.get('express_company', '')
             tracking_number = request.POST.get('tracking_number', '')
+            invoice_type = request.POST.get('invoice_type', invoice.invoice_type)  # 获取发票类型
+            generate_pdf = request.POST.get('generate_pdf') == 'on'  # 是否立即生成PDF
             
             if not invoice_number or not invoice_date:
                 messages.error(request, '请填写发票号码和开票日期。')
@@ -285,11 +292,34 @@ def invoice_admin_review(request, invoice_id):
             invoice.express_company = express_company
             invoice.tracking_number = tracking_number
             invoice.admin_remark = admin_remark
+            invoice.invoice_type = invoice_type  # 更新发票类型
+            
+            # 如果是电子发票，且选择立即生成PDF
+            if invoice_type == 'electronic' and generate_pdf:
+                try:
+                    # 确保media/invoices目录存在
+                    invoice_dir = os.path.join(settings.MEDIA_ROOT, 'invoices')
+                    os.makedirs(invoice_dir, exist_ok=True)
+                    
+                    # 生成电子发票PDF
+                    pdf_content = InvoiceGenerator.generate_pdf(invoice)
+                    
+                    # 保存PDF文件
+                    invoice.invoice_pdf.save(f"invoice_{invoice_number}.pdf", pdf_content)
+                    
+                except Exception as e:
+                    messages.error(request, f'电子发票生成失败: {str(e)}')
+            
             invoice.save()
             
             # 生成通知
             notification_content = f'您的发票申请（金额：¥{invoice.amount}，抬头：{invoice.title}）已开具完成。'
-            if tracking_number:
+            if invoice_type == 'electronic':
+                if generate_pdf and invoice.invoice_pdf:
+                    notification_content += '您可以在发票详情页下载电子发票。'
+                else:
+                    notification_content += '电子发票将稍后生成，请稍后查看。'
+            elif tracking_number:
                 notification_content += f'快递公司：{express_company}，快递单号：{tracking_number}。'
                 
             Notification.objects.create(
@@ -324,6 +354,49 @@ def invoice_detail(request, invoice_id):
         'invoice_items': invoice_items,
     }
     return render(request, 'Payment/invoice_detail.html', context)
+
+@login_required
+def invoice_download(request, invoice_id):
+    """下载电子发票"""
+    # 检查是否是管理员
+    is_admin = request.user.is_staff
+    
+    if is_admin:
+        # 管理员可以下载任何发票
+        invoice = get_object_or_404(Invoice, id=invoice_id)
+    else:
+        # 普通用户只能下载自己的发票
+        invoice = get_object_or_404(Invoice, id=invoice_id, user=request.user)
+    
+    # 检查是否是电子发票且已完成
+    if invoice.invoice_type != 'electronic' or invoice.status != 'completed':
+        messages.error(request, '此发票不是电子发票或尚未完成处理。')
+        if is_admin:
+            return redirect('payment:invoice_admin_review', invoice_id=invoice.id)
+        else:
+            return redirect('payment:invoice_detail', invoice_id=invoice.id)
+    
+    # 检查是否有PDF文件
+    if not invoice.invoice_pdf:
+        messages.error(request, '电子发票PDF文件不存在。')
+        if is_admin:
+            return redirect('payment:invoice_admin_review', invoice_id=invoice.id)
+        else:
+            return redirect('payment:invoice_detail', invoice_id=invoice.id)
+    
+    try:
+        # 打开文件
+        file_path = invoice.invoice_pdf.path
+        response = FileResponse(open(file_path, 'rb'))
+        response['Content-Type'] = 'application/pdf'
+        response['Content-Disposition'] = f'attachment; filename="invoice_{invoice.invoice_number}.pdf"'
+        return response
+    except Exception as e:
+        messages.error(request, f'下载失败: {str(e)}')
+        if is_admin:
+            return redirect('payment:invoice_admin_review', invoice_id=invoice.id)
+        else:
+            return redirect('payment:invoice_detail', invoice_id=invoice.id)
 
 @login_required
 def invoice_cancel(request, invoice_id):
@@ -471,3 +544,40 @@ def invoice_info_delete(request, info_id):
         'invoice_info': invoice_info,
     }
     return render(request, 'Payment/invoice_info_delete.html', context)
+
+@user_passes_test(is_admin)
+def regenerate_invoice_pdf(request, invoice_id):
+    """管理员重新生成电子发票PDF"""
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    
+    # 检查是否是电子发票且已完成
+    if invoice.invoice_type != 'electronic' or invoice.status != 'completed':
+        messages.error(request, '此发票不是电子发票或尚未完成处理。')
+        return redirect('payment:invoice_admin_review', invoice_id=invoice.id)
+    
+    try:
+        # 确保media/invoices目录存在
+        invoice_dir = os.path.join(settings.MEDIA_ROOT, 'invoices')
+        os.makedirs(invoice_dir, exist_ok=True)
+        
+        # 生成电子发票PDF
+        pdf_content = InvoiceGenerator.generate_pdf(invoice)
+        
+        # 如果已有PDF，先删除
+        if invoice.invoice_pdf:
+            if os.path.exists(invoice.invoice_pdf.path):
+                try:
+                    os.remove(invoice.invoice_pdf.path)
+                except Exception as e:
+                    messages.warning(request, f'无法删除原PDF文件: {str(e)}，将创建新文件。')
+        
+        # 保存新的PDF文件
+        invoice.invoice_pdf.save(f"invoice_{invoice.invoice_number}.pdf", pdf_content, save=True)
+        
+        messages.success(request, '电子发票PDF已重新生成。')
+    except Exception as e:
+        import traceback
+        error_msg = traceback.format_exc()
+        messages.error(request, f'电子发票生成失败: {str(e)}\n详细错误: {error_msg[:200]}...')
+    
+    return redirect('payment:invoice_admin_review', invoice_id=invoice.id)
