@@ -9,7 +9,7 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ('username', 'email')
     ordering = ('-date_joined',)
     fieldsets = (
-        (None, {'fields': ('username', 'email', 'password')}),
+        ('基本信息', {'fields': ('username', 'email', 'password')}),
         ('个人信息', {'fields': ('phone', 'company', 'job_title', 'bio')}),
         ('用户状态', {'fields': ('user_type', 'audit_status', 'is_verified', 'balance')}),
         ('权限信息', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
