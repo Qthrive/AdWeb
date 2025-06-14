@@ -116,6 +116,15 @@
                                     <i class="fas fa-sign-in-alt"></i> 广告主登录
                                 </button>
 
+                                <div class="d-flex justify-content-between mb-3">
+                                    <a href="{% url 'users:password_reset' %}" class="text-decoration-none">
+                                        <i class="fas fa-key"></i> 忘记密码？
+                                    </a>
+                                    <a href="{% url 'users:register' %}" class="text-decoration-none">
+                                        <i class="fas fa-user-plus"></i> 申请注册
+                                    </a>
+                                </div>
+
                                 <div class="text-center">
                                     <small class="text-muted">还没有账号？</small>
                                     <a href="{% url 'users:register' %}" class="text-decoration-none">申请注册广告主账号</a>
@@ -146,6 +155,12 @@
                                 <button type="submit" class="btn btn-danger w-100">
                                     <i class="fas fa-user-shield"></i> 管理员登录
                                 </button>
+                                
+                                <div class="mt-3 text-center">
+                                    <a href="{% url 'users:password_reset' %}" class="text-decoration-none">
+                                        <i class="fas fa-key"></i> 忘记密码？
+                                    </a>
+                                </div>
                             </form>
                         </div>
                     </div>

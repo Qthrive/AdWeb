@@ -13,10 +13,16 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.http import HttpResponse
-from django.contrib.auth.views import PasswordResetView as DjangoPasswordResetView
+from django.contrib.auth.views import (
+    PasswordResetView, 
+    PasswordResetDoneView, 
+    PasswordResetConfirmView, 
+    PasswordResetCompleteView
+)
 from .forms import CustomPasswordResetForm
 from django.core.paginator import Paginator
 from django.conf import settings
+from django.urls import reverse_lazy
 
 User = get_user_model()
 
@@ -278,16 +284,48 @@ def activation_success(request):
 def activation_failed(request):
     return render(request, 'activation_failed.html')  # 激活失败页面
 
-class CustomPasswordResetView(DjangoPasswordResetView):
+# 密码重置视图
+class CustomPasswordResetView(PasswordResetView):
+    template_name = 'users/password_reset_form.html'
+    email_template_name = 'users/password_reset_email.html'
+    subject_template_name = 'users/password_reset_subject.txt'
     form_class = CustomPasswordResetForm
-
+    success_url = reverse_lazy('users:password_reset_done')
+    
     def form_valid(self, form):
-        print("PasswordResetForm 验证通过")
-        return super().form_valid(form)
-
+        """如果表单有效，重定向到成功URL"""
+        # 设置额外的选项
+        opts = {
+            'use_https': self.request.is_secure(),
+            'token_generator': self.token_generator,
+            'from_email': settings.EMAIL_HOST_USER,
+            'email_template_name': self.email_template_name,
+            'subject_template_name': self.subject_template_name,
+            'request': self.request,
+            'html_email_template_name': self.html_email_template_name,
+            'extra_email_context': self.extra_email_context,
+        }
+        form.save(**opts)
+        messages.info(self.request, "如果您输入的邮箱存在于我们的系统中，您将收到一封密码重置邮件。")
+        # 直接重定向到成功URL，而不是调用super().form_valid(form)
+        return redirect(self.success_url)
+    
     def form_invalid(self, form):
-        print("PasswordResetForm 验证失败:", form.errors)
+        """如果表单无效，返回表单错误"""
         return super().form_invalid(form)
+
+# 密码重置完成视图
+class CustomPasswordResetDoneView(PasswordResetDoneView):
+    template_name = 'users/password_reset_done.html'
+
+# 密码重置确认视图
+class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+    template_name = 'users/password_reset_confirm.html'
+    success_url = reverse_lazy('users:password_reset_complete')
+
+# 密码重置完成视图
+class CustomPasswordResetCompleteView(PasswordResetCompleteView):
+    template_name = 'users/password_reset_complete.html'
 
 @login_required
 def notification_list(request):

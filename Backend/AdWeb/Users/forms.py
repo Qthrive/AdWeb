@@ -120,17 +120,33 @@ class CustomPasswordChangeForm(PasswordChangeForm):
         return new_password2
     
 class CustomPasswordResetForm(DjangoPasswordResetForm):
-    def save(self, domain_override=None, subject_template_name='registration/password_reset_subject.txt',
+    email = forms.EmailField(
+        label='邮箱',
+        max_length=254,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control', 
+            'placeholder': '请输入您注册时使用的邮箱',
+            'autocomplete': 'email'
+        }),
+    )
+    
+    def save(self, request=None, domain_override=None, subject_template_name='registration/password_reset_subject.txt',
              email_template_name='registration/password_reset_email.html',
              use_https=False, token_generator=None, from_email=None,
              html_email_template_name=None, extra_email_context=None):
         email = self.cleaned_data['email']
-        print(f"尝试重置密码的邮箱: {email}")
         active_users = User.objects.filter(email__iexact=email, is_active=True)
-        for user in active_users:
-            print(f"找到激活用户: {user.email}, ID: {user.id}")
-        return super().save(domain_override, subject_template_name, email_template_name, use_https,
-                            token_generator, from_email, html_email_template_name, extra_email_context)
+        return super().save(
+            domain_override=domain_override,
+            subject_template_name=subject_template_name, 
+            email_template_name=email_template_name,
+            use_https=use_https,
+            token_generator=token_generator, 
+            from_email=from_email, 
+            request=request,
+            html_email_template_name=html_email_template_name, 
+            extra_email_context=extra_email_context
+        )
     
 # 修改个人资料表单
 class ProfileForm(forms.ModelForm):
