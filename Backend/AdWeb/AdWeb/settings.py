@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -140,13 +141,12 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Static files
+# 静态文件配置
 STATIC_URL = '/static/'
-# 静态文件收集的目标目录
-STATIC_ROOT = BASE_DIR / "staticfiles"
-# 静态文件的目录
 STATICFILES_DIRS = [
-    BASE_DIR / "static",  # 确保项目根目录下有一个 static 文件夹
+    os.path.join(BASE_DIR, 'static'),
 ]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 LOGIN_URL = '/users/login/'
 LOGIN_REDIRECT_URL = 'admanage:platform_home'
