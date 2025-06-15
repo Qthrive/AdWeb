@@ -5,5 +5,4 @@ USE adweb;
 
 SELECT * FROM users_user WHERE id = 1;
 
-DELETE FROM users_user WHERE id = 1;
 
