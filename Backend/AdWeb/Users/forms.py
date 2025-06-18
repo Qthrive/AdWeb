@@ -49,14 +49,23 @@ class RegistrationForm(UserCreationForm):
         email = self.cleaned_data.get('email')
         try:
             existing_user = User.objects.get(email=email)
-            if not existing_user.is_verified:
-                # 如果用户未验证，允许重新注册
-                return email
-            else:
-                raise ValidationError("该邮箱已被注册且已验证")
+            # 只有待审核或已批准的用户会导致邮箱验证失败
+            if existing_user.audit_status == 'pending':
+                raise ValidationError("该邮箱已注册，正在等待管理员审核")
+            elif existing_user.audit_status == 'approved':
+                raise ValidationError("该邮箱已被注册")
+            # 如果是被拒绝的用户，视图函数已经删除了，不应该运行到这里
         except User.DoesNotExist:
             # 如果用户不存在，正常返回邮箱
-            return email
+            pass
+        return email
+            
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        # 由于被拒绝的用户已经在视图函数中被删除，这里只需要检查用户名是否存在
+        if User.objects.filter(username=username).exists():
+            raise ValidationError("该用户名已被注册")
+        return username
     
 # 登录表单
 class LoginForm(forms.Form):
@@ -130,23 +139,64 @@ class CustomPasswordResetForm(DjangoPasswordResetForm):
         }),
     )
     
+    reason = forms.CharField(
+        label='重置原因',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'placeholder': '请简要说明您需要重置密码的原因',
+            'rows': '3'
+        }),
+        required=True
+    )
+    
     def save(self, request=None, domain_override=None, subject_template_name='registration/password_reset_subject.txt',
              email_template_name='registration/password_reset_email.html',
              use_https=False, token_generator=None, from_email=None,
              html_email_template_name=None, extra_email_context=None):
         email = self.cleaned_data['email']
+        reason = self.cleaned_data['reason']
         active_users = User.objects.filter(email__iexact=email, is_active=True)
-        return super().save(
-            domain_override=domain_override,
-            subject_template_name=subject_template_name, 
-            email_template_name=email_template_name,
-            use_https=use_https,
-            token_generator=token_generator, 
-            from_email=from_email, 
-            request=request,
-            html_email_template_name=html_email_template_name, 
-            extra_email_context=extra_email_context
-        )
+        
+        if active_users.exists():
+            user = active_users.first()
+            # 创建密码重置请求记录
+            from .models import PasswordResetRequest
+            from django.utils.crypto import get_random_string
+            
+            # 生成唯一令牌
+            token = get_random_string(64)
+            
+            # 创建重置请求
+            reset_request = PasswordResetRequest.objects.create(
+                user=user,
+                token=token,
+                reason=reason
+            )
+            
+            # 通知管理员
+            from .models import Notification
+            from django.utils import timezone
+            
+            # 获取所有管理员
+            admins = User.objects.filter(is_staff=True)
+            for admin in admins:
+                Notification.objects.create(
+                    user=admin,
+                    title='新的密码重置请求',
+                    content=f'用户 {user.username}（{user.email}）请求重置密码，请及时审核。'
+                )
+            
+            # 通知用户
+            Notification.objects.create(
+                user=user,
+                title='密码重置请求已提交',
+                content='您的密码重置请求已提交，等待管理员审核。审核通过后，您将收到包含重置链接的邮件。'
+            )
+            
+            # 不立即发送邮件，等待管理员审核
+            return active_users
+            
+        return active_users
     
 # 修改个人资料表单
 class ProfileForm(forms.ModelForm):

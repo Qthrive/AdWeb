@@ -10,7 +10,7 @@ from django.db.models import Sum
 from django.core.paginator import Paginator
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from Users.models import Notification, User
+from Users.models import Notification, User, PasswordResetRequest
 from Payment.models import Invoice
 import os
 from django.conf import settings
@@ -35,10 +35,15 @@ def platform_home(request):
         # 获取待处理发票申请
         pending_invoices = Invoice.objects.filter(status='pending').order_by('-created_at')
         
+        # 获取待审核密码重置请求数量
+        pending_reset_count = PasswordResetRequest.objects.filter(status='pending').count()
+        
         context = {
             'pending_users': pending_users,
             'pending_ads': pending_ads,
             'pending_invoices': pending_invoices,
+            'pending_reset_count': pending_reset_count,
+            'pending_users_count': pending_users.count(),
         }
     else:
         # 普通广告主界面
@@ -976,3 +981,23 @@ def test_image_upload(request):
         context['test_results'] = test_results
     
     return render(request, 'AdManage/test_image_upload.html', context)
+
+def get_unread_notifications_count(request):
+    """获取用户未读通知数量，用于全局显示"""
+    if request.user.is_authenticated:
+        from Users.models import Notification, User, PasswordResetRequest
+        
+        unread_count = Notification.objects.filter(user=request.user, status='unread').count()
+        
+        # 如果是管理员，添加待审核用户数量
+        if request.user.is_staff:
+            pending_users_count = User.objects.filter(audit_status='pending').count()
+            pending_reset_count = PasswordResetRequest.objects.filter(status='pending').count()
+            return {
+                'unread_notifications_count': unread_count,
+                'pending_users_count': pending_users_count,
+                'pending_reset_count': pending_reset_count,
+            }
+        
+        return {'unread_notifications_count': unread_count}
+    return {'unread_notifications_count': 0}

@@ -11,24 +11,40 @@
         </a>
     </div>
 
+    <!-- 状态标签页 -->
+    <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+            <a class="nav-link {% if status == '' %}active{% endif %}" href="{% url 'users:register_list' %}">
+                全部 <span class="badge rounded-pill bg-secondary">{{ pending_count|add:approved_count|add:rejected_count }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if status == 'pending' %}active{% endif %}" href="{% url 'users:register_list' %}?status=pending">
+                待审核 <span class="badge rounded-pill bg-warning text-dark">{{ pending_count }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if status == 'approved' %}active{% endif %}" href="{% url 'users:register_list' %}?status=approved">
+                已通过 <span class="badge rounded-pill bg-success">{{ approved_count }}</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if status == 'rejected' %}active{% endif %}" href="{% url 'users:register_list' %}?status=rejected">
+                已拒绝 <span class="badge rounded-pill bg-danger">{{ rejected_count }}</span>
+            </a>
+        </li>
+    </ul>
+
     <!-- 筛选器 -->
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-3">
-                    <label for="status" class="form-label">审核状态</label>
-                    <select class="form-select" id="status" name="status">
-                        <option value="">全部</option>
-                        <option value="pending" {% if status == 'pending' %}selected{% endif %}>待审核</option>
-                        <option value="approved" {% if status == 'approved' %}selected{% endif %}>已通过</option>
-                        <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>已拒绝</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
+                <input type="hidden" name="status" value="{{ status }}">
+                <div class="col-md-4">
                     <label for="email" class="form-label">邮箱</label>
                     <input type="text" class="form-control" id="email" name="email" value="{{ email }}" placeholder="输入邮箱">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label for="date_range" class="form-label">注册时间</label>
                     <select class="form-select" id="date_range" name="date_range">
                         <option value="">全部</option>
@@ -38,7 +54,7 @@
                         <option value="last30days" {% if date_range == 'last30days' %}selected{% endif %}>最近30天</option>
                     </select>
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
+                <div class="col-md-4 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="fas fa-search"></i> 查询
                     </button>
@@ -71,7 +87,7 @@
                             <td>{{ user.register_ip|default:"未知" }}</td>
                             <td>
                                 {% if user.audit_status == 'pending' %}
-                                <span class="badge bg-warning">待审核</span>
+                                <span class="badge bg-warning text-dark">待审核</span>
                                 {% elif user.audit_status == 'approved' %}
                                 <span class="badge bg-success">已通过</span>
                                 {% else %}
@@ -94,7 +110,17 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center">暂无待审核用户</td>
+                            <td colspan="6" class="text-center">
+                                {% if status == 'pending' %}
+                                暂无待审核用户
+                                {% elif status == 'approved' %}
+                                暂无已通过审核的用户
+                                {% elif status == 'rejected' %}
+                                暂无被拒绝的用户
+                                {% else %}
+                                暂无用户记录
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

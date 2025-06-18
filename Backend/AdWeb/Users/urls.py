@@ -30,4 +30,12 @@ urlpatterns = [
     path('reset/done/', 
          views.CustomPasswordResetCompleteView.as_view(), 
          name='password_reset_complete'),
+    
+    # 密码重置审核路径
+    path('password_reset/list/', 
+         views.password_reset_list, 
+         name='password_reset_list'),
+    path('password_reset/<int:request_id>/review/', 
+         views.password_reset_review, 
+         name='password_reset_review'),
 ]

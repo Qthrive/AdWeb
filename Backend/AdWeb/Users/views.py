@@ -7,7 +7,7 @@ from .utils import send_verification_email
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.utils.timezone import now
-from .models import ValidationCode, Notification
+from .models import ValidationCode, Notification, AuditLog, PasswordResetRequest
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -29,48 +29,56 @@ User = get_user_model()
 # Create your views here.
 def user_register(request):
     if request.method == 'POST':
-        form = RegistrationForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data.get('email')
+        # 先检查是否是被拒绝的用户尝试重新注册
+        email = request.POST.get('email')
+        username = request.POST.get('username')
+        
+        if email:
             try:
                 existing_user = User.objects.get(email=email)
-                if existing_user.audit_status == 'pending':
-                    form.add_error('email', "该邮箱已注册，正在等待管理员审核")
-                else:
-                    form.add_error('email', "该邮箱已被注册")
+                if existing_user.audit_status == 'rejected':
+                    # 如果是被拒绝的用户，先删除旧账号
+                    print(f"发现被拒绝的用户，正在删除旧账号: {email}")
+                    existing_user.delete()
+                    print(f"已删除被拒绝的用户账号: {email}")
             except User.DoesNotExist:
-                # 如果用户不存在，创建新用户
-                user = form.save(commit=False)
-                user.is_active = True  # 设置为激活状态，但需要等待审核
-                user.audit_status = 'pending'  # 设置为待审核状态
-                user.register_ip = request.META.get('REMOTE_ADDR')
-                user.device_info = request.META.get('HTTP_USER_AGENT', '')
-                user.user_type = 'advertiser'  # 设置为广告主
-                user.save()
+                pass  # 用户不存在，继续处理
+        
+        # 然后处理表单验证
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            # 创建新用户
+            user = form.save(commit=False)
+            user.is_active = True  # 设置为激活状态，但需要等待审核
+            user.audit_status = 'pending'  # 设置为待审核状态
+            user.register_ip = request.META.get('REMOTE_ADDR')
+            user.device_info = request.META.get('HTTP_USER_AGENT', '')
+            user.user_type = 'advertiser'  # 设置为广告主
+            user.save()
 
-                # 给管理员发送通知
-                admins = User.objects.filter(is_staff=True)
-                for admin in admins:
-                    Notification.objects.create(
-                        user=admin,
-                        title='新用户注册待审核',
-                        content=f'新用户 {user.username}（{user.email}）已注册，等待审核。'
-                    )
-                
-                # 发送邮件通知用户
-                try:
-                    send_mail(
-                        '【AdWeb广告管理平台】注册申请已提交',
-                        f'尊敬的{user.username}：\n\n您的注册申请已提交成功，正在等待管理员审核。\n审核结果将通过邮件通知，请耐心等待。\n\n如有疑问，请联系管理员。\n\nAdWeb广告管理平台',
-                        settings.DEFAULT_FROM_EMAIL,
-                        [user.email],
-                        fail_silently=True,
-                    )
-                except Exception as e:
-                    print(f"发送邮件失败: {str(e)}")
+            # 给管理员发送通知
+            admins = User.objects.filter(is_staff=True)
+            for admin in admins:
+                Notification.objects.create(
+                    user=admin,
+                    title='新用户注册待审核',
+                    content=f'新用户 {user.username}（{user.email}）已注册，等待审核。'
+                )
+            
+            # 发送邮件通知用户
+            try:
+                send_mail(
+                    '【AdWeb广告管理平台】注册申请已提交',
+                    f'尊敬的{user.username}：\n\n您的注册申请已提交成功，正在等待管理员审核。\n审核结果将通过邮件通知，请耐心等待。\n\n如有疑问，请联系管理员。\n\nAdWeb广告管理平台',
+                    settings.DEFAULT_FROM_EMAIL,
+                    [user.email],
+                    fail_silently=True,
+                )
+            except Exception as e:
+                print(f"发送邮件失败: {str(e)}")
 
-                messages.success(request, '注册成功！请等待管理员审核，审核结果将通过邮件通知。')
-                return redirect('users:registration_sent')
+            messages.success(request, '注册成功！请等待管理员审核，审核结果将通过邮件通知。')
+            return redirect('users:registration_sent')
     else:
         form = RegistrationForm()
     return render(request, 'register.html', {'form': form})
@@ -356,7 +364,7 @@ def notification_list(request):
 @user_passes_test(lambda u: u.is_staff)
 def register_list(request):
     """用户注册审核列表"""
-    status = request.GET.get('status', 'pending')  # 默认显示待审核
+    status = request.GET.get('status', '')  # 默认显示所有状态
     email = request.GET.get('email', '')
     date_range = request.GET.get('date_range', '')
 
@@ -387,11 +395,19 @@ def register_list(request):
     page = request.GET.get('page')
     users = paginator.get_page(page)
     
+    # 获取各个状态的数量
+    pending_count = User.objects.filter(user_type='advertiser', audit_status='pending').count()
+    approved_count = User.objects.filter(user_type='advertiser', audit_status='approved').count()
+    rejected_count = User.objects.filter(user_type='advertiser', audit_status='rejected').count()
+    
     context = {
         'users': users,
         'status': status,
         'email': email,
         'date_range': date_range,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'rejected_count': rejected_count,
     }
     return render(request, 'users/register_list.html', context)
 
@@ -400,6 +416,12 @@ def register_list(request):
 def register_review(request, user_id):
     """用户注册审核详情"""
     user = get_object_or_404(User, id=user_id)
+    
+    # 获取该用户的审核历史记录
+    audit_logs = AuditLog.objects.filter(
+        target_user=user,
+        audit_type='user_register'
+    ).order_by('-created_at')
     
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -429,6 +451,15 @@ def register_review(request, user_id):
             user.audit_time = timezone.now()
             user.save()
             
+            # 创建审核日志
+            AuditLog.objects.create(
+                audit_type='user_register',
+                target_user=user,
+                reviewer=request.user,
+                action=action,
+                remark=reason
+            )
+            
             # 创建通知
             Notification.objects.create(
                 user=user,
@@ -457,5 +488,168 @@ def register_review(request, user_id):
     
     context = {
         'user': user,
+        'audit_logs': audit_logs,
     }
     return render(request, 'users/register_detail.html', context)
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def password_reset_review(request, request_id):
+    """密码重置请求审核详情"""
+    from .models import PasswordResetRequest, AuditLog
+    
+    reset_request = get_object_or_404(PasswordResetRequest, id=request_id)
+    
+    # 获取该用户的密码重置审核历史
+    audit_logs = AuditLog.objects.filter(
+        target_user=reset_request.user,
+        audit_type='password_reset'
+    ).order_by('-created_at')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        remark = request.POST.get('remark', '')
+        
+        if not action:
+            messages.error(request, '请选择审核结果')
+            return redirect('users:password_reset_review', request_id=reset_request.id)
+        
+        try:
+            # 更新请求状态
+            if action == 'approve':
+                reset_request.status = 'approved'
+                reset_request.admin_remark = remark
+                reset_request.reviewer = request.user
+                reset_request.approved_at = timezone.now()
+                reset_request.save()
+                
+                # 创建审核日志
+                AuditLog.objects.create(
+                    audit_type='password_reset',
+                    target_user=reset_request.user,
+                    reviewer=request.user,
+                    action='approve',
+                    remark=remark
+                )
+                
+                # 发送重置邮件
+                from django.contrib.auth.tokens import default_token_generator
+                from django.utils.http import urlsafe_base64_encode
+                from django.utils.encoding import force_bytes
+                
+                user = reset_request.user
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                token = default_token_generator.make_token(user)
+                
+                domain = request.META.get('HTTP_HOST', 'localhost:8000')
+                protocol = 'https' if request.is_secure() else 'http'
+                
+                reset_url = f"{protocol}://{domain}/users/reset/{uid}/{token}/"
+                
+                email_subject = '【AdWeb广告管理平台】密码重置链接'
+                email_message = f'''尊敬的{user.username}：
+
+您的密码重置申请已通过审核。
+
+请点击以下链接来重置您的密码：
+
+{reset_url}
+
+如果点击链接无效，请将链接复制到浏览器地址栏中访问。
+
+此链接将在24小时后失效，请尽快操作。
+
+如果您没有请求重置密码，请忽略此邮件，您的账户将保持安全。
+
+此致，
+AdWeb广告管理平台团队'''
+                
+                # 发送邮件
+                try:
+                    send_mail(
+                        email_subject,
+                        email_message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [user.email],
+                        fail_silently=False,
+                    )
+                    
+                    # 创建通知
+                    Notification.objects.create(
+                        user=user,
+                        title='密码重置申请已通过',
+                        content='您的密码重置申请已通过审核，我们已向您的邮箱发送了重置链接，请查收。'
+                    )
+                    
+                    messages.success(request, '审核完成，重置邮件已发送')
+                except Exception as e:
+                    messages.error(request, f'邮件发送失败：{str(e)}')
+                    
+            else:  # 拒绝
+                reset_request.status = 'rejected'
+                reset_request.admin_remark = remark
+                reset_request.reviewer = request.user
+                reset_request.save()
+                
+                # 创建审核日志
+                AuditLog.objects.create(
+                    audit_type='password_reset',
+                    target_user=reset_request.user,
+                    reviewer=request.user,
+                    action='reject',
+                    remark=remark
+                )
+                
+                # 创建通知
+                Notification.objects.create(
+                    user=reset_request.user,
+                    title='密码重置申请被拒绝',
+                    content=f'您的密码重置申请未通过审核。原因：{remark}'
+                )
+                
+                messages.success(request, '审核完成，已拒绝该请求')
+            
+            return redirect('users:password_reset_list')
+            
+        except Exception as e:
+            messages.error(request, f'审核失败：{str(e)}')
+    
+    context = {
+        'reset_request': reset_request,
+        'audit_logs': audit_logs,
+    }
+    return render(request, 'users/password_reset_review.html', context)
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def password_reset_list(request):
+    """管理员查看密码重置请求列表"""
+    status = request.GET.get('status', 'all')
+    
+    # 根据状态筛选请求
+    if status == 'pending':
+        reset_requests = PasswordResetRequest.objects.filter(status='pending')
+    elif status == 'approved':
+        reset_requests = PasswordResetRequest.objects.filter(status='approved')
+    elif status == 'rejected':
+        reset_requests = PasswordResetRequest.objects.filter(status='rejected')
+    elif status == 'completed':
+        reset_requests = PasswordResetRequest.objects.filter(status='completed')
+    else:
+        reset_requests = PasswordResetRequest.objects.all()
+    
+    # 分页
+    paginator = Paginator(reset_requests, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # 获取待审核的请求数量（用于显示在导航栏上）
+    pending_count = PasswordResetRequest.objects.filter(status='pending').count()
+    
+    context = {
+        'page_obj': page_obj,
+        'status': status,
+        'pending_count': pending_count,
+    }
+    
+    return render(request, 'users/password_reset_list.html', context)

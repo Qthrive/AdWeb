@@ -28,6 +28,21 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'users:register_list' %}">
                             <i class="fas fa-user-check"></i> 用户审核
+                            {% with pending_count=pending_users_count %}
+                                {% if pending_count > 0 %}
+                                    <span class="badge bg-danger">{{ pending_count }}</span>
+                                {% endif %}
+                            {% endwith %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'users:password_reset_list' %}">
+                            <i class="fas fa-key"></i> 密码重置审核
+                            {% with pending_count=pending_reset_count %}
+                                {% if pending_count > 0 %}
+                                    <span class="badge bg-danger">{{ pending_count }}</span>
+                                {% endif %}
+                            {% endwith %}
                         </a>
                     </li>
                     <li class="nav-item">

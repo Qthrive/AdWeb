@@ -2,6 +2,10 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="description" content="AdWeb广告管理平台登录页面">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>用户登录 - AdWeb广告管理平台</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -89,6 +93,7 @@
                         <div class="tab-pane fade show active" id="advertiser" role="tabpanel" aria-labelledby="advertiser-tab">
                             <form method="post" action="{% url 'users:login' %}">
                                 {% csrf_token %}
+                                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                                 <input type="hidden" name="next" value="{{ next }}">
                                 <input type="hidden" name="user_type" value="advertiser">
 
@@ -135,6 +140,7 @@
                         <div class="tab-pane fade" id="admin" role="tabpanel" aria-labelledby="admin-tab">
                             <form method="post" action="{% url 'users:login' %}">
                                 {% csrf_token %}
+                                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
                                 <input type="hidden" name="next" value="{{ next }}">
                                 <input type="hidden" name="user_type" value="admin">
 
